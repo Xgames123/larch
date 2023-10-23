@@ -5,7 +5,8 @@ Custom 4 bit computer in Minecraft
 * [v1](docs/v1.md) (has some design problems)
 * [v2](docs/v2.md)
 
-## [Examples](examples/)
+## Programs
+Some programs written in assembly can be found [here](programs/)
 > **NOTE**
 > Some don't work
 
