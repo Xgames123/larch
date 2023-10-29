@@ -5,13 +5,13 @@ term1: 0x0
 increment: 0x1
 
 .bank 1
-read2 &term0
-storea
-read2 &term1
-storeb
+r2 &term0
+sa
+r2 &term1
+sb
 for_loop: # loop for 5 times and increment with 1
 add
-storek # output: regk
+sk # output: regk
 #TODO: get 1 into rega
 #TODO: get i into regw
 add

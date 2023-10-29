@@ -1,37 +1,38 @@
-pub struct Bank {
-    pub data: [u8],
-}
+use std::fmt::Display;
 
-pub struct SourceReader {
-    data: String,
-    pos: usize,
-}
-impl SourceReader {
-    pub fn from_str(data: String) -> Self {
-        Self { data, pos: 0 }
-    }
-    pub fn get_pos(self) -> usize {
-        self.pos
-    }
+use libmcc::Bank;
 
-    pub fn next_token(&mut self) -> &str {
-        let start_pos = self.get_pos();
-        for (i, character) in data[start_pos..].iter().enumerate() {
-            if character.is_whitespace() {
-                return &self.data[start_pos..i];
-            }
-        }
-        &self.data[start_pos..self.get_pos()];
-        loop {
-            if let Some(character) = self.next_char() {
-            } else {
-                return;
-            }
+mod codegen;
+mod lexing;
+
+pub enum Stage {
+    Lex,
+    CodeGen,
+}
+impl Display for Stage {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Stage::Lex => fmt.write_str("LEX"),
+            Stage::CodeGen => fmt.write_str("CGEN"),
         }
     }
 }
+pub struct AsmError {
+    linenum: usize,
+    code_snip: Box<str>,
+    message: Box<str>,
+    stage: Stage,
+}
+impl Display for AsmError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.write_fmt(format_args!(
+            "{} line {} '{}' {}",
+            self.stage, self.linenum, self.code_snip, self.message
+        ))
+    }
+}
 
-pub fn assemble(input: String) -> Vec<u8> {
-    let out = Vec::<u8>::new();
-    out
+pub fn assemble(input: String) -> Result<[Bank; 16], AsmError> {
+    let lexed = lexing::lex(input)?;
+    Ok(codegen::gencode(lexed)?)
 }
