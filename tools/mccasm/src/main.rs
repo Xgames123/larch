@@ -13,9 +13,8 @@ mod emiting;
 mod util;
 
 #[derive(Parser)]
-#[command(author, version)]
+#[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
-#[command(about = "Assembler for for the mcc assembly language", long_about = None)]
 struct Cli {
     /// Input file or - to read from stdin
     #[arg(default_value = "-")]

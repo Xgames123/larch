@@ -1,6 +1,7 @@
 [package]
 name = "mccasm"
-author =["ldev <ldev@ldev.eu.org>"]
+authors =["ldev <ldev@ldev.eu.org>"]
+description="Assembler for for the mcc assembly language"
 version = "1.0.0"
 edition = "2021"
 
