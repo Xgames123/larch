@@ -37,8 +37,8 @@ fn die(message: &str) {
     process::exit(-1);
 }
 fn from_bin_packed(data: Vec<u8>) -> Memory {
-    let out = Vec::new();
-    let current = Vec::new();
+    let mut out = Vec::new();
+    let mut current = Vec::new();
     for byte in data.into_iter() {
         let lower = byte & 0xF0;
         let upper = byte & 0x0F >> 4;
@@ -68,7 +68,7 @@ fn main() {
         Vec::new()
     });
     let memory = from_bin_packed(input_data);
-    let emulator = Emulator::new(memory);
+    let mut emulator = Emulator::new(memory);
 
     emulator.start();
 
