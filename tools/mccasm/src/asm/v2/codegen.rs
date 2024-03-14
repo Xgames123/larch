@@ -1,9 +1,9 @@
-use libmcc::Bank;
+use libmcc::{bobbin_bits::U4, v2::Bank};
 use std::collections::HashMap;
 
 use super::{
+    super::{AsmError, Stage},
     lexing::{LexToken, TokenLineNumPair},
-    AsmError,
 };
 
 fn pad_til_len<T>(vec: &mut Vec<T>, len: usize, val: T)
@@ -18,7 +18,7 @@ where
 pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[Bank; 16], AsmError> {
     let mut out = [Bank::default(); 16];
     let mut data = Vec::new();
-    let mut current_bank: u8 = 0;
+    let mut current_bank: U4 = U4::B0000;
 
     let mut labels = HashMap::new();
     let mut label_refs: Vec<(Box<str>, usize)> = Vec::new();
@@ -37,7 +37,7 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[Bank; 16], AsmError>
             }
             if out.len() > 16 {
                 return Err(AsmError {
-                    stage: super::Stage::CodeGen,
+                    stage: Stage::CodeGen,
                     linenum: $linenum,
                     code_snip: "".into(),
                     message: format!("Bank {} overflow", current_bank).into(),

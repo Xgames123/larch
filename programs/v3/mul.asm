@@ -1,8 +1,8 @@
 # VERSION v3
 
-.org 03 # data
-0x2 # a
-0x5 # b
+.org 20 # data
+0x9 # a
+0x8 # b
 &&mul
 &&mul_data
 0x0 # tmp
@@ -14,7 +14,7 @@ mul_data:
   0x0 # increment value (iv)
   &loop
 
-.org 02 # code
+.org 30 # code
 
 # main
 pushi # a
@@ -43,7 +43,7 @@ mul:
   popi
   popi
   popi # write b to memory
-  dl # dp: loop addr
+  di # dp: loop addr
   loop: # stack: a
     dd
     dd

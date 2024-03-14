@@ -6,7 +6,7 @@ use std::{
 
 use clap::Parser;
 use emulator::Emulator;
-use libmcc::Memory;
+use libmcc::bobbin_bits::U4;
 
 mod emulator;
 
@@ -36,25 +36,18 @@ fn die(message: &str) {
     eprintln!("FATAL: {}", message);
     process::exit(-1);
 }
-fn from_bin_packed(data: Vec<u8>) -> Memory {
-    let mut out = Vec::new();
-    let mut current = Vec::new();
+fn from_bin_packed(data: Vec<u8>) -> [U4; 256] {
+    let mut out = [U4::B0000; 256];
+    let mut count = 0;
     for byte in data.into_iter() {
-        let lower = byte & 0xF0;
-        let upper = byte & 0x0F >> 4;
-        current.push(lower);
-        current.push(upper);
-        if current.len() == 16 {
-            out.push(
-                TryInto::<[u8; 16]>::try_into(current.clone())
-                    .unwrap()
-                    .into(),
-            );
-            current.clear()
-        }
+        let lower = byte >> 4 & 0x0F;
+        let upper = byte & 0x0F;
+        out[count] = lower.into();
+        out[count + 1] = upper.into();
+        count += 2;
     }
 
-    out.try_into().unwrap()
+    out
 }
 
 fn main() {
@@ -74,5 +67,12 @@ fn main() {
 
     loop {
         emulator.tick();
+        if !emulator.is_running {
+            break;
+        }
     }
+    //println!("{:#x}", emulator.sp());
+    println!("{:#x}", emulator.stack_pop());
+    println!("{:#x}", emulator.stack_pop());
+    //println!("{:#04x}", emulator.dp());
 }

@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::emiting::*;
-use libmcc::Bank;
+use libmcc::{bobbin_bits::U4, InstructionSet};
 mod asm;
 mod emiting;
 mod util;
@@ -73,7 +73,7 @@ fn main() {
         String::new()
     });
 
-    let out = match asm::assemble(input_data) {
+    let out = match asm::assemble(input_data, InstructionSet::V2) {
         Ok(out) => out,
         Err(err) => {
             die(&err.to_string());
@@ -81,7 +81,7 @@ fn main() {
         }
     };
 
-    fn emit(format: Format, output_file: &Path, code: [Bank; 16], strip: bool) -> Vec<u8> {
+    fn emit(format: Format, output_file: &Path, code: [U4; 256], strip: bool) -> Vec<u8> {
         match format {
             Format::Hex => emit_hex(code, strip),
             Format::Bin => emit_bin_packed(code),

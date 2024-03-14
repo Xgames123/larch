@@ -1,9 +1,7 @@
+use libmcc::{bobbin_bits::U4, InstructionSet};
 use std::fmt::Display;
-
-use libmcc::Bank;
-
-mod codegen;
-mod lexing;
+//pub mod v2;
+pub mod v3;
 
 pub enum Stage {
     Lex,
@@ -32,7 +30,9 @@ impl Display for AsmError {
     }
 }
 
-pub fn assemble(input: String) -> Result<[Bank; 16], AsmError> {
-    let lexed = lexing::lex(input)?;
-    Ok(codegen::gencode(lexed)?)
+pub fn assemble(input: String, iset: InstructionSet) -> Result<[U4; 256], AsmError> {
+    let lexed = v3::lexing::lex(input)?;
+    let code = v3::codegen::gencode(lexed)?;
+    //println!("{:?}", code);
+    Ok(code)
 }

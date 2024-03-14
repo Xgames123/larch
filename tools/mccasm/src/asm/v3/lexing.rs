@@ -1,15 +1,17 @@
-use super::AsmError;
-use crate::util::parse_hex4;
-use libmcc::Instruction;
+use super::super::AsmError;
+use crate::util::{parse_hex4, parse_hex8};
+use libmcc::bobbin_bits::U4;
+use libmcc::v3::Instruction;
 
 #[derive(Debug, Clone)]
 pub enum LexToken {
-    Instruction(libmcc::Instruction),
+    Instruction(Instruction),
     LabelDef(Box<str>),
-    LabelRef(Box<str>),
-    Bank(u8),
-    HexLiteral(u8),
+    LabelRef { name: Box<str>, wide: bool },
+    Org(u8),
+    HexLiteral(U4),
 }
+#[derive(Debug)]
 pub struct TokenLineNumPair {
     pub linenum: usize,
     pub token: LexToken,
@@ -31,26 +33,27 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
         let linenum = linenum + 1;
         let mut line = line;
 
+        // strip comments
         if let Some(pos) = line.find('#') {
             line = &line[..pos];
         }
 
-        let mut bank = false;
+        let mut org = false;
         for token in line.split_whitespace() {
-            if bank {
+            if org {
                 push_tok!(
-                    LexToken::Bank(parse_hex4(&token).ok_or_else(|| AsmError {
+                    LexToken::Org(parse_hex8(&token).ok_or_else(|| AsmError {
                         linenum,
                         code_snip: token.into(),
                         message: "Failed to parse hex digit".into(),
-                        stage: super::Stage::Lex,
+                        stage: super::super::Stage::Lex,
                     })?),
                     linenum
                 );
                 continue;
             }
-            if token == ".bank" {
-                bank = true;
+            if token == ".org" {
+                org = true;
                 continue;
             }
 
@@ -59,8 +62,24 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
                 continue;
             }
 
+            if token.starts_with("&&") {
+                push_tok!(
+                    LexToken::LabelRef {
+                        name: token[2..].into(),
+                        wide: true
+                    },
+                    linenum
+                );
+                continue;
+            }
             if token.starts_with("&") {
-                push_tok!(LexToken::LabelRef(token[1..].into()), linenum);
+                push_tok!(
+                    LexToken::LabelRef {
+                        name: token[1..].into(),
+                        wide: false
+                    },
+                    linenum
+                );
                 continue;
             }
             if token.starts_with("0x") {
@@ -69,7 +88,7 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
                         linenum,
                         code_snip: token.into(),
                         message: "Failed to parse hex digit".into(),
-                        stage: super::Stage::Lex,
+                        stage: super::super::Stage::Lex,
                     })?),
                     linenum
                 );
@@ -77,11 +96,13 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
             }
 
             push_tok!(
-                LexToken::Instruction(lex_instruct(&token).ok_or_else(|| AsmError {
-                    linenum,
-                    code_snip: token.into(),
-                    message: "Invalid instruction".into(),
-                    stage: super::Stage::Lex,
+                LexToken::Instruction(Instruction::try_from_str(&token).ok_or_else(|| {
+                    AsmError {
+                        linenum,
+                        code_snip: token.into(),
+                        message: "Invalid instruction".into(),
+                        stage: super::super::Stage::Lex,
+                    }
                 })?),
                 linenum
             );
@@ -89,30 +110,4 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
     }
 
     Ok(vec)
-}
-
-fn lex_instruct<'a>(token: &'a str) -> Option<Instruction> {
-    use libmcc::Instruction::*;
-    match token {
-        "la" => Some(La),
-        "sa" => Some(Sa),
-        "lb" => Some(Lb),
-        "sb" => Some(Sb),
-        "lk" => Some(Lk),
-        "sk" => Some(Sk),
-
-        "r" => Some(R),
-        "w" => Some(W),
-        "r2" => Some(R2),
-        "w2" => Some(W2),
-
-        "jeq" => Some(Jeq),
-        "jeq2" => Some(Jeq2),
-        "jmp" => Some(Jmp),
-        "jmp2" => Some(Jmp2),
-
-        "add" => Some(Add),
-        "xor" => Some(Xor),
-        _ => None,
-    }
 }

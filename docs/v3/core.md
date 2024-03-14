@@ -17,8 +17,8 @@ Core information
 | .. | ram        |
 | 10 | stack      |
 | .. | stack      |
-| 20 | ip start   |
-| 30 | dp start   |
+| 20 | dp start   |
+| 30 | ip start   |
 | .. | ram        |
 
 
@@ -50,7 +50,7 @@ Pushes the value of the current cell to the stack
 ### pop 0x2
 Pops the top of the stack to the current cell
 
-### swap 0x3
+### swp 0x3
 Swaps the 2 top nibs of the stack with each other
 
 ### dswp 0x4
