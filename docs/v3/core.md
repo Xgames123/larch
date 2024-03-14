@@ -19,6 +19,7 @@ Core information
 | .. | stack      |
 | 20 | ip start   |
 | 30 | dp start   |
+| .. | ram        |
 
 
 ### sp
@@ -46,43 +47,50 @@ Does nothing and wastes a cpu cycle
 ### push 0x1
 Pushes the value of the current cell to the stack
 
-
 ### pop 0x2
 Pops the top of the stack to the current cell
 
-### dswp 0x3
-Swaps the value on the stack with the dp pointer
+### swap 0x3
+Swaps the 2 top nibs of the stack with each other
 
-NOTE: if the previous value was 0 the dp pointer will not be moved
+### dswp 0x4
+Swaps 2 nib on the stack with the dp
 
-### dl 0x4
-Increments(left) the data pointer with 1
+NOTE: if the stack value was 0 the dp will not be moved
 
-### dr 0x5
-Decrements(right) the data pointer with 1
+### di 0x5
+Increments the data pointer with 1
 
-### call 0x6
-Swaps ip and the 2 nibs on the stack
+### dd 0x6
+Decrements the data pointer with 1
 
-### jz 0x7
-Jumps to the second value of the stack if the value on the top of the stack is 0
+### call 0x7
+Swaps 2 nib on the stack with the ip
 
-### pushl 0x8
+NOTE: if the stack value was 0 the ip will not be moved
+
+### jnz 0x8
+Jumps to the value of the current cell if the value on the stack is not 0
+
+### pushi 0x9
 Push value on the stack and increment dp
 
-### inc 0x9
+### popi 0xA
+Pops the top of the stack to the current cell and increment dp
+
+### inc 0xB
 Increments the value on the top of the stack by 1
 
-### dec 0xA
+### dec 0xC
 Decrements the value on the top of the stack by 1
 
-### add 0xB
+### add 0xD
 Adds the 2 nibs on the stack together and pushes the result
 
-### sub 0xC
+### sub 0xE
 Subtracts the 2 nibs on the stack together and pushes the result
 
-### mul 0xD
+### mul 0xF
 Multiplies the 2 nibs on the stack together and pushes the result
 
 
