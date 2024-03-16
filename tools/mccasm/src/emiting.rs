@@ -1,11 +1,13 @@
+use std::path::Path;
+
 use libmcc::bobbin_bits::U4;
 
-use crate::util;
+use crate::{util, Format};
 
-pub fn emit_hex(data: [U4; 256], strip: bool) -> Vec<u8> {
+pub fn emit_hex(data: [U4; 256]) -> Vec<u8> {
     let mut output = String::new();
 
-    for (i, nib) in data.iter().enumerate() {
+    for nib in data.iter() {
         //println!("{} {:#x}", util::to_hex4(*nib), nib.into_u8());
         output.push_str(&util::to_hex4(*nib));
         output.push('\n');
@@ -30,4 +32,24 @@ pub fn emit_bin_packed(data: [U4; 256]) -> Vec<u8> {
         output.push(nib0 << 4 | nib1);
     }
     output
+}
+pub fn emit(format: Format, file_ext: Option<&str>, code: [U4; 256], strip: bool) -> Vec<u8> {
+    match format {
+        Format::Hex => emit_hex(code),
+        Format::Bin => emit_bin_packed(code),
+        Format::Ubin => emit_bin_unpacked(code),
+        Format::Auto => emit(
+            file_ext
+                .map(|ext| match ext {
+                    "hex" => Some(Format::Hex),
+                    "bin" => Some(Format::Bin),
+                    _ => None,
+                })
+                .flatten()
+                .unwrap_or(Format::Bin),
+            file_ext,
+            code,
+            strip,
+        ),
+    }
 }

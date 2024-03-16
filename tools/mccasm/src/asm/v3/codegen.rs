@@ -1,4 +1,5 @@
 use libmcc::bobbin_bits::U4;
+use log::*;
 use std::collections::HashMap;
 
 use crate::asm::Stage;
@@ -8,15 +9,6 @@ use super::{
     lexing::{LexToken, TokenLineNumPair},
 };
 
-fn pad_til_len<T>(vec: &mut Vec<T>, len: usize, val: T)
-where
-    T: Clone,
-{
-    for _ in vec.len()..len {
-        vec.push(val.clone());
-    }
-}
-
 struct LabelRef {
     name: Box<str>,
     addr: u8,
@@ -24,12 +16,21 @@ struct LabelRef {
     linenum: usize,
 }
 
+#[inline]
+fn write_org(org_num: u8, data: &Vec<U4>, output: &mut [U4; 256]) {
+    trace!("org begin {:#x}", org_num);
+    for (i, nib) in data.iter().enumerate() {
+        output[org_num as usize + i] = *nib;
+        trace!("{:#x} = {:#x}", org_num as usize + i, nib.into_u8());
+    }
+    trace!("org end {:#x}", org_num);
+}
+
 pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> {
     let mut output = [U4::B0000; 256];
     let mut data = Vec::new();
     let mut current_org: u8 = 0;
 
-    let mut orgs = vec![];
     let mut labels = HashMap::new();
     let mut label_refs: Vec<LabelRef> = Vec::new();
 
@@ -38,13 +39,8 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> 
         let token = token.token;
         match token {
             LexToken::Org(num) => {
-                for (i, nib) in data.iter().enumerate() {
-                    output[current_org as usize + i] = *nib;
-                    //println!("{} = {:#x}", current_org as usize + i, nib.into_u8());
-                }
-                //println!("org end {}", current_org);
+                write_org(current_org, &data, &mut output);
                 current_org = num;
-                orgs.push(num);
                 data.clear();
             }
             LexToken::Instruction(inst) => {
@@ -71,10 +67,8 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> 
         }
     }
     //write last org
-    for (i, nib) in data.iter().enumerate() {
-        output[current_org as usize + i] = *nib;
-        //println!("{} = {:#x}", current_org as usize + i, nib.into_u8());
-    }
+    write_org(current_org, &data, &mut output);
+    data.clear();
 
     //resolve labels
     for LabelRef {

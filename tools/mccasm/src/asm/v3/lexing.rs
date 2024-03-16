@@ -37,6 +37,9 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
         if let Some(pos) = line.find('#') {
             line = &line[..pos];
         }
+        if let Some(pos) = line.find(';') {
+            line = &line[..pos];
+        }
 
         let mut org = false;
         for token in line.split_whitespace() {

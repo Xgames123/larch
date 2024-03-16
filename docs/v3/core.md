@@ -44,39 +44,35 @@ Size: 2 nib
 ### nop 0x0
 Does nothing and wastes a cpu cycle
 
-### push 0x1
-Pushes the value of the current cell to the stack
+### psi 0x1
+Pushes the value of the current cell to the stack and Increments dp
 
-### pop 0x2
-Pops the top of the stack to the current cell
+### psd 0x2
+Pushes the value of the current cell to the stack and decrements dp
 
-### swp 0x3
+### poi 0x3
+Pops the top of the stack to the current cell and Increments dp
+
+### pod 0x4
+Pops the top of the stack to the current cell and decrements dp
+
+### swp 0x5
 Swaps the 2 top nibs of the stack with each other
 
-### dswp 0x4
-Swaps 2 nib on the stack with the dp
+### mdp 0x6
+move dp to the address of the 2 nibs at the top of the stack
 
-NOTE: if the stack value was 0 the dp will not be moved
-
-### di 0x5
+### di 0x7
 Increments the data pointer with 1
 
-### dd 0x6
+### dd 0x8
 Decrements the data pointer with 1
 
-### call 0x7
-Swaps 2 nib on the stack with the ip
+### jmp 0x9
+Jumps to the address of the 2 nibs at the top of the stack
 
-NOTE: if the stack value was 0 the ip will not be moved
-
-### jnz 0x8
+### jnz 0xA
 Jumps to the value of the current cell if the value on the stack is not 0
-
-### pushi 0x9
-Push value on the stack and increment dp
-
-### popi 0xA
-Pops the top of the stack to the current cell and increment dp
 
 ### inc 0xB
 Increments the value on the top of the stack by 1

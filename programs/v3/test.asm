@@ -1,11 +1,20 @@
 .org 20
-&&label
 0x0
-label: 0x9
+data_move_to_me: &&end
+&&data_move_to_me
+0x0
 
 .org 30 # code
-push
 di
-push
-dswp
-push
+di
+di
+psi
+psi
+mdp
+psi
+psi
+jmp
+
+
+.org FF
+end:

@@ -41,7 +41,7 @@ enum Format {
     Hex,
     Bin,
     ///Unpacked binary format (every nibble is byte aligned)
-    UBin,
+    Ubin,
 }
 fn get_input_data(path: &str) -> io::Result<String> {
     if path == "-" {
@@ -81,31 +81,12 @@ fn main() {
         }
     };
 
-    fn emit(format: Format, output_file: &Path, code: [U4; 256], strip: bool) -> Vec<u8> {
-        match format {
-            Format::Hex => emit_hex(code, strip),
-            Format::Bin => emit_bin_packed(code),
-            Format::UBin => emit_bin_unpacked(code),
-            Format::Auto => emit(
-                output_file
-                    .extension()
-                    .map(|os| os.to_str())
-                    .flatten()
-                    .map(|ext| match ext {
-                        "hex" => Some(Format::Hex),
-                        "bin" => Some(Format::Bin),
-                        _ => None,
-                    })
-                    .flatten()
-                    .unwrap_or(Format::Bin),
-                output_file,
-                code,
-                strip,
-            ),
-        }
-    }
-
-    let content = emit(cli.format, output_file, out, cli.strip);
+    let content = emit(
+        cli.format,
+        output_file.extension().map(|ext| ext.to_str()).flatten(),
+        out,
+        cli.strip,
+    );
 
     fs::write(cli.output, content).unwrap_or_else(|err| {
         die(&format!("Failed to write output file\n\n {}", err));

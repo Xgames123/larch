@@ -6,7 +6,7 @@ use std::{
 
 use clap::Parser;
 use emulator::Emulator;
-use libmcc::bobbin_bits::U4;
+use libmcc::U4;
 
 mod emulator;
 
@@ -18,6 +18,8 @@ struct Cli {
     ///file to load in memory or - to read stdin
     #[arg(default_value = "-")]
     input: String,
+    #[arg(short = 's', long = "step")]
+    step: bool,
 }
 
 fn get_input_data(path: &str) -> io::Result<Vec<u8>> {
@@ -60,19 +62,31 @@ fn main() {
         ));
         Vec::new()
     });
+    if input_data.len() != 128 {
+        die("Input data was not the size of the memory (128 bytes). Are you sure your data isn't in ubin format?")
+    }
+
     let memory = from_bin_packed(input_data);
     let mut emulator = Emulator::new(memory);
 
     emulator.start();
 
     loop {
-        emulator.tick();
         if !emulator.is_running {
             break;
         }
+        let instruct = emulator.tick();
+        if cli.step {
+            if let Some(instruct) = instruct {
+                println!("instruct: {:#04x} {:?}", instruct.into_u4(), instruct);
+            }
+            println!("ip: {:#04x}", emulator.ip());
+            println!("dp: {:#04x}", emulator.dp());
+            println!("stack: {:#04x}", emulator.stack_peek());
+            println!("");
+            println!("Press return key to step forward");
+            let mut buf = String::new();
+            std::io::stdin().read_line(&mut buf).unwrap();
+        }
     }
-    //println!("{:#x}", emulator.sp());
-    println!("{:#x}", emulator.stack_pop());
-    println!("{:#x}", emulator.stack_pop());
-    //println!("{:#04x}", emulator.dp());
 }
