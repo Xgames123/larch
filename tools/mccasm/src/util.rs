@@ -26,3 +26,20 @@ pub fn parse_hex4<'a>(str: &'a str) -> Option<U4> {
     }
     return None;
 }
+
+pub fn count_nonzero_pages(data: &[U4; 256]) -> usize {
+    let mut non_zero_pages = 0;
+    for page in data.chunks(16) {
+        let mut zero = true;
+        for nib in page {
+            if *nib != U4::B0000 {
+                zero = false;
+                break;
+            }
+        }
+        if zero {
+            non_zero_pages += 1;
+        }
+    }
+    non_zero_pages
+}

@@ -46,7 +46,7 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
             if org {
                 push_tok!(
                     LexToken::Org(parse_hex8(&token).ok_or_else(|| AsmError {
-                        linenum,
+                        linenum: Some(linenum),
                         code_snip: token.into(),
                         message: "Failed to parse hex digit".into(),
                         stage: super::super::Stage::Lex,
@@ -88,7 +88,7 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
             if token.starts_with("0x") {
                 push_tok!(
                     LexToken::HexLiteral(parse_hex4(&token[2..]).ok_or_else(|| AsmError {
-                        linenum,
+                        linenum: Some(linenum),
                         code_snip: token.into(),
                         message: "Failed to parse hex digit".into(),
                         stage: super::super::Stage::Lex,
@@ -101,7 +101,7 @@ pub fn lex(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
             push_tok!(
                 LexToken::Instruction(Instruction::try_from_str(&token).ok_or_else(|| {
                     AsmError {
-                        linenum,
+                        linenum: Some(linenum),
                         code_snip: token.into(),
                         message: "Invalid instruction".into(),
                         stage: super::super::Stage::Lex,

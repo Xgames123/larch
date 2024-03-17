@@ -6,7 +6,7 @@ use std::{
 
 use clap::Parser;
 use emulator::Emulator;
-use libmcc::U4;
+use libmcc::{v3::Instruction, U4};
 
 mod emulator;
 
@@ -15,11 +15,21 @@ mod emulator;
 #[command(propagate_version = true)]
 #[command(about = "Emulator for for my custom Minecraft computer", long_about = None)]
 struct Cli {
-    ///file to load in memory or - to read stdin
+    ///File to load in memory or - to read stdin
     #[arg(default_value = "-")]
     input: String,
+
+    ///Step through the execution
     #[arg(short = 's', long = "step")]
     step: bool,
+
+    ///Step through the execution when reaching a nop instruction
+    #[arg(short = 'b')]
+    nop_break: bool,
+
+    ///Print the top of the stack when the vm exits
+    #[arg(short = 'p')]
+    print: bool,
 }
 
 fn get_input_data(path: &str) -> io::Result<Vec<u8>> {
@@ -53,7 +63,7 @@ fn from_bin_packed(data: Vec<u8>) -> [U4; 256] {
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
     let input_data = get_input_data(&cli.input).unwrap_or_else(|err: io::Error| {
         die(&format!(
             "Failed to read input '{}'\n{}",
@@ -71,22 +81,44 @@ fn main() {
 
     emulator.start();
 
+    let mut last_was_nop = false;
     loop {
         if !emulator.is_running {
             break;
         }
         let instruct = emulator.tick();
+        if instruct == Some(Instruction::Nop) {
+            if !last_was_nop && cli.nop_break {
+                cli.step = true;
+            }
+            last_was_nop = true;
+        } else {
+            last_was_nop = false;
+        }
+
         if cli.step {
+            println!("VM BREAK");
             if let Some(instruct) = instruct {
-                println!("instruct: {:#04x} {:?}", instruct.into_u4(), instruct);
+                println!("instruct: {:#03x} {:?}", instruct.into_u4(), instruct);
             }
             println!("ip: {:#04x}", emulator.ip());
             println!("dp: {:#04x}", emulator.dp());
-            println!("stack: {:#04x}", emulator.stack_peek());
-            println!("");
-            println!("Press return key to step forward");
+            println!("stack:");
+            for i in
+                (emulator::STACK_START + 1)..emulator::STACK_START + emulator.sp().into_u8() + 1
+            {
+                println!("   {:#03x}", emulator.read_mem(i));
+            }
+            println!("Press return to step forward or r to continue execution");
             let mut buf = String::new();
             std::io::stdin().read_line(&mut buf).unwrap();
+            if buf.to_lowercase().trim() == "r" {
+                cli.step = false;
+            }
         }
+    }
+    if cli.print {
+        println!("VM EXIT");
+        println!("stack top was {:#03x}", emulator.stack_pop());
     }
 }

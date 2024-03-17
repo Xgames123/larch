@@ -1,15 +1,18 @@
 # VERSION v3
+# multiplies a and b together and leaves the result on the stack when the program exits
 
 .org 20 # data
 &&data_ret
 &&ret
-0x9 # a
-0x8 # b
+0x3 # a
+0x3 # b
 &&mul
 &&mul_data
 0x0 # tmp
 data_ret:
 &&end
+
+.org 60
 
 mul_data:
   0x0 # b
@@ -32,6 +35,16 @@ psi # mul_data1
 mdp
 jmp
 ret:
+psd # push awnser on the stack
+nop ; break
+di ; move a 2 places back
+swp
+pod
+di
+swp
+psd
+
+mdp
 # end
 psi # push &&end
 psi
@@ -41,6 +54,7 @@ jmp
 mul:
   poi # write b to memory
   di # dp: loop addr
+.org 50 ; needed so we can jump back to loop
   loop: # stack: a
     dd
     dd
@@ -55,9 +69,9 @@ mul:
 
     jnz   # if not 0 jump to loop
   dd
-  psd # awnser
+  dd
   poi # remove a from the stack
   jmp # return
 
-.org FF
+.org FE
 end:

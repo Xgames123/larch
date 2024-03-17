@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use libmcc::bobbin_bits::U4;
 
 use crate::{util, Format};
@@ -33,7 +31,7 @@ pub fn emit_bin_packed(data: [U4; 256]) -> Vec<u8> {
     }
     output
 }
-pub fn emit(format: Format, file_ext: Option<&str>, code: [U4; 256], strip: bool) -> Vec<u8> {
+pub fn emit(format: Format, file_ext: Option<&str>, code: [U4; 256]) -> Vec<u8> {
     match format {
         Format::Hex => emit_hex(code),
         Format::Bin => emit_bin_packed(code),
@@ -49,7 +47,6 @@ pub fn emit(format: Format, file_ext: Option<&str>, code: [U4; 256], strip: bool
                 .unwrap_or(Format::Bin),
             file_ext,
             code,
-            strip,
         ),
     }
 }

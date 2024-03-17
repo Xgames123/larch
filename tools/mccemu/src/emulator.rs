@@ -42,6 +42,7 @@ impl Emulator {
     }
 
     pub fn stack_push(&mut self, value: U4) {
+        //println!("{:#04x}", value.into_u8());
         self.set_sp((self.sp().into_u8() + 1).into());
         self.write_mem(STACK_START + self.sp().into_u8(), value);
     }
@@ -61,6 +62,7 @@ impl Emulator {
     pub fn start(&mut self) {
         self.set_ip(0x30);
         self.set_dp(0x20);
+        self.set_sp(U4::B0000);
         self.is_running = true;
     }
 
@@ -92,10 +94,13 @@ impl Emulator {
         }
         let current_nib = self.read_mem(self.ip());
         let instruct: Instruction = Instruction::from_u4(current_nib);
+
+        let mut jump = false;
         use Instruction::*;
         match instruct {
             Nop => {}
             Psi => {
+                //println!("{:#04x}", self.read_mem(0x20));
                 //println!("{:#04x}", self.dp());
                 self.stack_push(self.read_mem(self.dp()));
                 self.set_dp(self.dp() + 1);
@@ -113,7 +118,7 @@ impl Emulator {
             Pod => {
                 let val = self.stack_pop();
                 self.write_mem(self.dp(), val);
-                self.set_dp(self.dp() + 1);
+                self.set_dp(self.dp() - 1);
             }
             Swp => {
                 let val1 = self.stack_pop();
@@ -124,8 +129,10 @@ impl Emulator {
             Mdp => {
                 let val = self.stack_pop();
                 self.write_mem(DP_ADDR0, val);
+                //println!("mdp{}", val);
                 let val = self.stack_pop();
                 self.write_mem(DP_ADDR1, val);
+                //println!("mdp{}", val);
             }
             Di => self.set_dp(self.dp() + 1),
             Dd => self.set_dp(self.dp() - 1),
@@ -134,11 +141,13 @@ impl Emulator {
                 self.write_mem(IP_ADDR0, val);
                 let val = self.stack_pop();
                 self.write_mem(IP_ADDR1, val);
+                jump = true;
             }
             Jnz => {
                 let val = self.stack_peek();
                 if val != 0 {
-                    self.write_mem(DP_ADDR0, self.read_mem(self.dp()))
+                    self.write_mem(IP_ADDR0, self.read_mem(self.dp()));
+                    jump = true;
                 }
             }
             Inc => {
@@ -152,6 +161,7 @@ impl Emulator {
             Add => {
                 let a = self.stack_pop();
                 let b = self.stack_pop();
+                //println!("add {} {}", a, b);
                 self.stack_push((a.into_u8() + b.into_u8()).into());
             }
             Sub => {
@@ -169,7 +179,9 @@ impl Emulator {
             self.stop();
             return Some(instruct);
         }
-        self.set_ip(self.ip() + 1);
+        if !jump {
+            self.set_ip(self.ip() + 1);
+        }
         Some(instruct)
     }
 }

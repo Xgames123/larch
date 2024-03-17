@@ -11,3 +11,4 @@ edition = "2021"
 log = {version="0.4.21"}
 clap = { version = "4.5.3", features = ["derive"] }
 libmcc = {path="../libmcc"}
+stderrlog={version="0.6.0"}

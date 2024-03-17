@@ -5,9 +5,9 @@ use std::{
     path::Path,
     process,
 };
+use stderrlog::LogLevelNum;
 
-use crate::emiting::*;
-use libmcc::{bobbin_bits::U4, InstructionSet};
+use crate::{emiting::*, util::count_nonzero_pages};
 mod asm;
 mod emiting;
 mod util;
@@ -21,16 +21,20 @@ struct Cli {
     input: String,
 
     /// Output file
-    #[arg(short = 'o')]
+    #[arg(short = 'o', long)]
     output: String,
 
-    /// Remove symbols from output
-    #[arg(short = 's')]
-    strip: bool,
-
     /// The format of the output
-    #[arg(short = 'f', default_value = "auto")]
+    #[arg(short = 'f', long, default_value = "auto")]
     format: Format,
+
+    /// Prints the amount of space the program uses
+    #[arg(short = 'm', long)]
+    memory_usage: bool,
+
+    /// The minimum log level
+    #[arg(long, default_value = "0")]
+    log_level: usize,
 }
 
 #[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
@@ -62,6 +66,13 @@ fn die(message: &str) {
 }
 fn main() {
     let cli = Cli::parse();
+    stderrlog::new()
+        .verbosity(LogLevelNum::from(cli.log_level))
+        .module(module_path!())
+        .show_module_names(true)
+        .init()
+        .unwrap();
+
     let output_file = Path::new(&cli.output);
 
     let input_data = get_input_data(&cli.input).unwrap_or_else(|err: io::Error| {
@@ -73,7 +84,7 @@ fn main() {
         String::new()
     });
 
-    let out = match asm::assemble(input_data, InstructionSet::V2) {
+    let out = match asm::assemble(input_data) {
         Ok(out) => out,
         Err(err) => {
             die(&err.to_string());
@@ -85,10 +96,13 @@ fn main() {
         cli.format,
         output_file.extension().map(|ext| ext.to_str()).flatten(),
         out,
-        cli.strip,
     );
 
     fs::write(cli.output, content).unwrap_or_else(|err| {
         die(&format!("Failed to write output file\n\n {}", err));
     });
+
+    if cli.memory_usage {
+        println!("Using {}/16 pages", count_nonzero_pages(&out));
+    }
 }
