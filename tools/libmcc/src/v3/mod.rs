@@ -1,4 +1,4 @@
-use bobbin_bits::U4;
+use crate::u4;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Instruction {
     Nop,
@@ -20,10 +20,10 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn into_u4(self) -> U4 {
-        unsafe { U4::from_u8_unchecked(self as u8) }
+    pub fn into_u4(self) -> u4 {
+        u4::from_low(self as u8)
     }
-    pub fn from_u4(val: U4) -> Self {
+    pub fn from_u4(val: u4) -> Self {
         unsafe { std::mem::transmute(val) }
     }
     pub fn try_from_str(string: &str) -> Option<Self> {

@@ -1,14 +1,14 @@
 //pub mod v2;
 pub mod v3;
-pub use bobbin_bits;
-pub use bobbin_bits::U4;
+#[allow(non_camel_case_types)]
+pub struct u4(u8);
 
-pub trait U4Add {
-    fn overflowing_add(self, other: U4) -> U4;
-}
-impl U4Add for U4 {
-    fn overflowing_add(self, other: U4) -> U4 {
-        (self.into_u8() + other.into_u8()).into()
+impl u4 {
+    pub fn from_low(val: u8) -> Self {
+        Self(val & 0x0F)
+    }
+    pub fn from_high(val: u8) -> Self {
+        Self::from_low(val >> 4)
     }
 }
 
