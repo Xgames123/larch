@@ -6,7 +6,7 @@ use std::{
 
 use clap::Parser;
 use emulator::Emulator;
-use libmcc::{v3::Instruction, U4};
+use libmcc::{u4, v3::Instruction};
 
 mod emulator;
 
@@ -48,14 +48,12 @@ fn die(message: &str) {
     eprintln!("FATAL: {}", message);
     process::exit(-1);
 }
-fn from_bin_packed(data: Vec<u8>) -> [U4; 256] {
-    let mut out = [U4::B0000; 256];
+fn from_bin_packed(data: Vec<u8>) -> [u4; 256] {
+    let mut out = [u4::ZERO; 256];
     let mut count = 0;
     for byte in data.into_iter() {
-        let lower = byte >> 4 & 0x0F;
-        let upper = byte & 0x0F;
-        out[count] = lower.into();
-        out[count + 1] = upper.into();
+        out[count] = u4::from_low(byte);
+        out[count + 1] = u4::from_high(byte);
         count += 2;
     }
 
@@ -105,7 +103,7 @@ fn main() {
             println!("dp: {:#04x}", emulator.dp());
             println!("stack:");
             for i in
-                (emulator::STACK_START + 1)..emulator::STACK_START + emulator.sp().into_u8() + 1
+                (emulator::STACK_START + 1)..emulator::STACK_START + emulator.sp().into_low() + 1
             {
                 println!("   {:#03x}", emulator.read_mem(i));
             }

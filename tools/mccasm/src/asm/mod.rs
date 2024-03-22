@@ -1,4 +1,4 @@
-use libmcc::bobbin_bits::U4;
+use libmcc::u4;
 use std::fmt::Display;
 //pub mod v2;
 pub mod v3;
@@ -37,7 +37,7 @@ impl Display for AsmError {
     }
 }
 
-pub fn assemble(input: String) -> Result<[U4; 256], AsmError> {
+pub fn assemble(input: String) -> Result<[u4; 256], AsmError> {
     let lexed = v3::lexing::lex(input)?;
     let code = v3::codegen::gencode(lexed)?;
     //println!("{:?}", code);

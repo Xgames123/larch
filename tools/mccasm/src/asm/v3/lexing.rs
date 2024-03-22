@@ -1,6 +1,6 @@
 use super::super::AsmError;
 use crate::util::{parse_hex4, parse_hex8};
-use libmcc::bobbin_bits::U4;
+use libmcc::u4;
 use libmcc::v3::Instruction;
 
 #[derive(Debug, Clone)]
@@ -9,7 +9,7 @@ pub enum LexToken {
     LabelDef(Box<str>),
     LabelRef { name: Box<str>, wide: bool },
     Org(u8),
-    HexLiteral(U4),
+    HexLiteral(u4),
 }
 #[derive(Debug)]
 pub struct TokenLineNumPair {

@@ -1,4 +1,4 @@
-use libmcc::{bobbin_bits::U4, v3::Instruction};
+use libmcc::{u4, v3::Instruction};
 
 pub const IP_ADDR0: u8 = 0x00;
 pub const IP_ADDR1: u8 = 0x01;
@@ -9,12 +9,12 @@ pub const SP_ADDR: u8 = 0x04;
 pub const STACK_START: u8 = 0x10;
 
 pub struct Emulator {
-    pub mem: [U4; 256],
+    pub mem: [u4; 256],
     pub is_running: bool,
 }
 
 impl Emulator {
-    pub fn new(mem: [U4; 256]) -> Self {
+    pub fn new(mem: [u4; 256]) -> Self {
         Emulator {
             mem,
             is_running: false,
@@ -34,27 +34,27 @@ impl Emulator {
         self.read_mem8(IP_ADDR0)
     }
 
-    pub fn sp(&self) -> U4 {
+    pub fn sp(&self) -> u4 {
         self.read_mem(SP_ADDR)
     }
-    pub fn set_sp(&mut self, value: U4) {
+    pub fn set_sp(&mut self, value: u4) {
         self.write_mem(SP_ADDR, value)
     }
 
-    pub fn stack_push(&mut self, value: U4) {
+    pub fn stack_push(&mut self, value: u4) {
         //println!("{:#04x}", value.into_u8());
-        self.set_sp((self.sp().into_u8() + 1).into());
-        self.write_mem(STACK_START + self.sp().into_u8(), value);
+        self.set_sp((self.sp().overflowing_add(u4::ONE)).into());
+        self.write_mem(STACK_START + self.sp().into_low(), value);
     }
-    pub fn stack_pop(&mut self) -> U4 {
+    pub fn stack_pop(&mut self) -> u4 {
         let value = self.stack_peek();
-        if self.sp() == 0 {
+        if self.sp() == u4::ZERO {
             return value;
         }
-        self.set_sp((self.sp().into_u8() - 1).into());
+        self.set_sp((self.sp().overflowing_sub(u4::ONE)).into());
         value
     }
-    pub fn stack_peek(&mut self) -> U4 {
+    pub fn stack_peek(&mut self) -> u4 {
         let value = self.mem[0x10 as usize + self.sp().into_usize()];
         value
     }
@@ -62,7 +62,7 @@ impl Emulator {
     pub fn start(&mut self) {
         self.set_ip(0x30);
         self.set_dp(0x20);
-        self.set_sp(U4::B0000);
+        self.set_sp(u4::ZERO);
         self.is_running = true;
     }
 
@@ -71,21 +71,19 @@ impl Emulator {
     }
 
     pub fn read_mem8(&self, addr: u8) -> u8 {
-        let lower = self.read_mem(addr).into_u8();
-        let upper = self.read_mem(addr + 1).into_u8() << 4;
+        let lower = self.read_mem(addr).into_low();
+        let upper = self.read_mem(addr + 1).into_high();
         return lower | upper;
     }
-    pub fn read_mem(&self, addr: u8) -> U4 {
+    pub fn read_mem(&self, addr: u8) -> u4 {
         self.mem[addr as usize]
     }
-    pub fn write_mem(&mut self, addr: u8, value: U4) {
+    pub fn write_mem(&mut self, addr: u8, value: u4) {
         self.mem[addr as usize] = value;
     }
     pub fn write_mem8(&mut self, addr: u8, value: u8) {
-        let lower = value & 0x0F;
-        let upper = value >> 4 & 0x0F;
-        self.write_mem(addr, lower.into());
-        self.write_mem(addr + 1, upper.into());
+        self.write_mem(addr, u4::from_low(value));
+        self.write_mem(addr + 1, u4::from_high(value));
     }
 
     pub fn tick(&mut self) -> Option<Instruction> {
@@ -145,34 +143,34 @@ impl Emulator {
             }
             Jnz => {
                 let val = self.stack_peek();
-                if val != 0 {
+                if val != u4::ZERO {
                     self.write_mem(IP_ADDR0, self.read_mem(self.dp()));
                     jump = true;
                 }
             }
             Inc => {
                 let val = self.stack_pop();
-                self.stack_push((val.into_u8() + 1).into());
+                self.stack_push(val.overflowing_add(u4::ONE));
             }
             Dec => {
                 let val = self.stack_pop();
-                self.stack_push((val.into_u8() - 1).into());
+                self.stack_push(val.overflowing_sub(u4::ONE));
             }
             Add => {
                 let a = self.stack_pop();
                 let b = self.stack_pop();
                 //println!("add {} {}", a, b);
-                self.stack_push((a.into_u8() + b.into_u8()).into());
+                self.stack_push(a.overflowing_add(b));
             }
             Sub => {
                 let a = self.stack_pop();
                 let b = self.stack_pop();
-                self.stack_push((a.into_u8() - b.into_u8()).into());
+                self.stack_push(a.overflowing_sub(b));
             }
             Mul => {
                 let a = self.stack_pop();
                 let b = self.stack_pop();
-                self.stack_push((a.into_u8() * b.into_u8()).into());
+                self.stack_push(a.overflowing_mul(b));
             }
         }
         if self.ip() == 255 {

@@ -1,4 +1,4 @@
-use libmcc::{bobbin_bits::U4, v3::Instruction};
+use libmcc::{u4, v3::Instruction};
 use log::*;
 use std::{collections::HashMap, fmt::Display};
 
@@ -49,8 +49,8 @@ impl Org {
 #[inline]
 fn write_org(
     mut org: Org,
-    data: &Vec<U4>,
-    output: &mut [U4; 256],
+    data: &Vec<u4>,
+    output: &mut [u4; 256],
     orgs: &[Org],
 ) -> Result<Org, AsmError> {
     let size = data.len();
@@ -75,7 +75,7 @@ fn write_org(
         trace!(
             "{:#x} = {:#x} {:?}",
             org.start_addr as usize + i,
-            nib.into_u8(),
+            nib.into_low(),
             Instruction::from_u4(*nib)
         );
     }
@@ -83,8 +83,8 @@ fn write_org(
     Ok(org)
 }
 
-pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> {
-    let mut output = [U4::B0000; 256];
+pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[u4; 256], AsmError> {
+    let mut output = [u4::ZERO; 256];
     let mut data = Vec::new();
     let mut current_org: Org = Org {
         linenum: None,
@@ -123,9 +123,9 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> 
                     wide,
                     linenum,
                 });
-                data.push(U4::B0000);
+                data.push(u4::ZERO);
                 if wide {
-                    data.push(U4::B0000);
+                    data.push(u4::ZERO);
                 }
             }
             LexToken::LabelDef(name) => {
@@ -134,7 +134,7 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> 
                     "{}: addr: {:#04x} data: {:#04x} {:?}   org: {:#04x}, data_len: {:#04x}",
                     name,
                     addr,
-                    output[addr as usize].into_u8(),
+                    output[addr as usize].into_low(),
                     Instruction::from_u4(output[addr as usize]),
                     current_org.start_addr,
                     data.len()
@@ -152,7 +152,7 @@ pub fn gencode(mut input: Vec<TokenLineNumPair>) -> Result<[U4; 256], AsmError> 
 }
 
 fn resolve_labels(
-    output: &mut [U4; 256],
+    output: &mut [u4; 256],
     labels: HashMap<Box<str>, u8>,
     label_refs: Vec<LabelRef>,
 ) -> Result<(), AsmError> {
@@ -190,14 +190,14 @@ fn resolve_labels(
 
         trace!(
             "label pointing to {:#x} {:?}",
-            output[*label_addr as usize].into_u8(),
+            output[*label_addr as usize].into_low(),
             Instruction::from_u4(output[*label_addr as usize])
         );
         if wide {
-            output[addr as usize + 1] = (label_addr & 0x0F).into();
-            output[addr as usize] = (label_addr >> 4 & 0x0F).into();
+            output[addr as usize + 1] = u4::from_low(*label_addr);
+            output[addr as usize] = u4::from_high(*label_addr);
         } else {
-            output[addr as usize] = (label_addr & 0x0F).into();
+            output[addr as usize] = u4::from_low(*label_addr);
         }
     }
 
