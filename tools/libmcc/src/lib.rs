@@ -8,8 +8,8 @@ pub mod v3;
 pub struct u4(u8);
 
 impl u4 {
-    pub const ZERO: u4 = u4::from_low(0);
-    pub const ONE: u4 = u4::from_low(1);
+    pub const ZERO: u4 = u4::from_low(0x00);
+    pub const ONE: u4 = u4::from_low(0x01);
 
     #[inline]
     pub const fn from_u32(val: u32) -> Self {
