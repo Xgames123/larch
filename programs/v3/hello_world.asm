@@ -1,0 +1,92 @@
+
+.org 20 # data
+&&data_chunk1
+
+
+.org 30
+psi
+psi
+mdp
+
+loop:
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+psi
+
+mdp
+
+poi
+poi
+dd
+dd
+poi
+poi
+dd
+dd
+poi
+poi
+dd
+dd
+poi
+poi
+dd
+dd
+poi
+poi
+
+mdp
+psi
+psi
+nop
+jmp
+
+.org 80 # data
+data_chunk1:
+&&data_chunk2
+0x6 0xF # o
+0x6 0xC # l
+0x6 0xC # l
+0x6 0x5 # e
+0x4 0x8 # H
+&&char_out
+
+data_chunk2:
+&&loop
+&&data_chunk3
+0x6 0xC # l
+0x7 0x2 # r
+0x6 0xF # o
+0x5 0x7 # W
+0x2 0x0 #  
+&&char_out
+
+data_chunk3:
+&&loop
+&&data_chunk4
+0x0 0xA # \n
+0x2 0x1 # !
+0x2 0x1 # !
+0x2 0x1 # !
+0x6 0x4 # d
+&&char_out
+
+data_chunk4:
+&&end
+
+
+.org F0
+char_out:
+
+.org FF
+end:

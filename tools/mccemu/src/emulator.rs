@@ -11,13 +11,18 @@ pub const STACK_START: u8 = 0x10;
 pub struct Emulator {
     pub mem: [u4; 256],
     pub is_running: bool,
+    on_mem_acces: Box<dyn Fn(u8, u4, bool, &Self) -> Option<u4>>,
 }
 
 impl Emulator {
-    pub fn new(mem: [u4; 256]) -> Self {
+    pub fn new(
+        mem: [u4; 256],
+        on_mem_acces: impl Fn(u8, u4, bool, &Self) -> Option<u4> + 'static,
+    ) -> Self {
         Emulator {
             mem,
             is_running: false,
+            on_mem_acces: Box::new(on_mem_acces),
         }
     }
     pub fn set_dp(&mut self, value: u8) {
@@ -76,10 +81,14 @@ impl Emulator {
         return lower | upper;
     }
     pub fn read_mem(&self, addr: u8) -> u4 {
+        if let Some(ext_out) = (self.on_mem_acces)(addr, u4::ZERO, false, self) {
+            return ext_out;
+        }
         self.mem[addr as usize]
     }
     pub fn write_mem(&mut self, addr: u8, value: u4) {
         self.mem[addr as usize] = value;
+        (self.on_mem_acces)(addr, value, true, self);
     }
     pub fn write_mem8(&mut self, addr: u8, value: u8) {
         self.write_mem(addr, u4::from_low(value));

@@ -9,6 +9,7 @@ use emulator::Emulator;
 use libmcc::{u4, v3::Instruction};
 
 mod emulator;
+mod ext;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -20,15 +21,18 @@ struct Cli {
     input: String,
 
     ///Step through the execution
-    #[arg(short = 's', long = "step")]
+    #[arg(short = 's', long)]
     step: bool,
 
     ///Step through the execution when reaching a nop instruction
-    #[arg(short = 'b')]
+    #[arg(short = 'b', long)]
     nop_break: bool,
 
+    #[arg(short = 'x', long)]
+    ext: Vec<ext::ExtType>,
+
     ///Print the top of the stack when the vm exits
-    #[arg(short = 'p')]
+    #[arg(short = 'p', long)]
     print: bool,
 }
 
@@ -75,7 +79,16 @@ fn main() {
     }
 
     let memory = from_bin_packed(input_data);
-    let mut emulator = Emulator::new(memory);
+
+    let extmgr = ext::ExtManager::new(cli.ext);
+    let mut emulator = Emulator::new(memory, move |addr, value, write, emulator| {
+        if write {
+            extmgr.on_mem_write(addr, value, emulator);
+            None
+        } else {
+            extmgr.on_mem_read(addr, emulator)
+        }
+    });
 
     emulator.start();
 
@@ -101,7 +114,7 @@ fn main() {
             }
             println!("ip: {:#04x}", emulator.ip());
             println!("dp: {:#04x}", emulator.dp());
-            println!("stack:");
+            println!("stack {:#03x}:", emulator.sp().into_low());
             for i in
                 (emulator::STACK_START + 1)..emulator::STACK_START + emulator.sp().into_low() + 1
             {
