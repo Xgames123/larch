@@ -25,9 +25,9 @@ pub fn emit_bin_packed(data: [u4; 256]) -> Vec<u8> {
     let mut output = Vec::with_capacity(16 * 16);
     for nibpair in data.chunks(2).into_iter() {
         let nib0 = nibpair[0].into_low();
-        let nib1 = nibpair[1].into_low();
+        let nib1 = nibpair[1].into_high();
 
-        output.push(nib0 << 4 | nib1);
+        output.push(nib0 | nib1);
     }
     output
 }

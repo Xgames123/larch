@@ -6,8 +6,8 @@ if [ "$(whoami)" = "root" ] ; then
 fi
 
 if [ "$1" = "-u" ] ; then
-  rm -f /usr/local/bin/mccasm
-  rm -f /usr/local/bin/mccemu
+  sudo rm -f /usr/local/bin/mccasm
+  sudo rm -f /usr/local/bin/mccemu
   exit 0
 fi
 

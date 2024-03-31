@@ -1,0 +1,9 @@
+.org 20
+0x2
+0x3
+
+
+.org 30
+psi
+psi
+add
