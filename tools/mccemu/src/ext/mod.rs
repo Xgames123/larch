@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 
 use clap::ValueEnum;
 use libmcc::u4;
@@ -40,12 +40,10 @@ macro_rules! type_to_ext {
 
 pub struct ExtManager {
     extensions: RefCell<Vec<Box<dyn Extension>>>,
-    ext_vec_borrow: Cell<bool>,
 }
 impl ExtManager {
     pub fn new(ext_types: Vec<ExtType>) -> Self {
         Self {
-            ext_vec_borrow: false.into(),
             extensions: type_to_ext!(ext_types,
                 ChardevAscii=>CharDev::new()
             )
@@ -54,29 +52,18 @@ impl ExtManager {
     }
 
     pub fn on_mem_write(&self, addr: u8, value: u4, emulator: &Emulator) {
-        if self.ext_vec_borrow.get() {
-            return;
-        }
-        self.ext_vec_borrow.set(true);
         for ext in self.extensions.borrow_mut().iter_mut() {
             ext.on_mem_write(addr, value, emulator);
         }
-        self.ext_vec_borrow.set(false);
     }
 
     pub fn on_mem_read(&self, addr: u8, emulator: &Emulator) -> Option<u4> {
-        if self.ext_vec_borrow.get() {
-            return None;
-        }
-        self.ext_vec_borrow.set(true);
         for ext in self.extensions.borrow_mut().iter_mut() {
             let out = ext.on_mem_read(addr, emulator);
             if out.is_some() {
-                self.ext_vec_borrow.set(false);
                 return out;
             }
         }
-        self.ext_vec_borrow.set(false);
         None
     }
 }

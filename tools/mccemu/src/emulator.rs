@@ -80,10 +80,20 @@ impl Emulator {
         let upper = self.read_mem(addr + 1).into_high();
         return lower | upper;
     }
+    ///Read memory without triggering an on_mem_acces call
+    pub fn ghost_read_mem8(&self, addr: u8) -> u8 {
+        let lower = self.ghost_read_mem(addr).into_low();
+        let upper = self.ghost_read_mem(addr + 1).into_high();
+        return lower | upper;
+    }
     pub fn read_mem(&self, addr: u8) -> u4 {
         if let Some(ext_out) = (self.on_mem_acces)(addr, u4::ZERO, false, self) {
             return ext_out;
         }
+        self.ghost_read_mem(addr)
+    }
+    ///Read memory without triggering an on_mem_acces call
+    pub fn ghost_read_mem(&self, addr: u8) -> u4 {
         self.mem[addr as usize]
     }
     pub fn write_mem(&mut self, addr: u8, value: u4) {

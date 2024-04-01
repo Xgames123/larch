@@ -1,7 +1,7 @@
 #!/bin/bash
 # USAGE: build.sh [project]
 
-all=(mul test add_test, hello_world, input)
+all=(mul test add_test hello_world echo)
 
 if [[ -z $1 ]] || [[ "$1" == "all" ]] ; then
   for proj in ${all[@]} ; do

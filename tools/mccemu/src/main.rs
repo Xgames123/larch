@@ -24,7 +24,7 @@ struct Cli {
     #[arg(short = 's', long)]
     step: bool,
 
-    ///Step through the execution when reaching a nop instruction
+    ///Step through the execution when reaching a nop instruction (not surrounded by other nops)
     #[arg(short = 'b', long)]
     nop_break: bool,
 
@@ -75,7 +75,7 @@ fn main() {
         Vec::new()
     });
     if input_data.len() != 128 {
-        die("Input data was not the size of the memory (128 bytes). Are you sure your data isn't in ubin format?")
+        die("Input data was not the size of the memory (128 bytes). Are you sure your data isn't in ubin or hex format?")
     }
 
     let memory = from_bin_packed(input_data);
@@ -99,7 +99,10 @@ fn main() {
         }
         let instruct = emulator.tick();
         if instruct == Some(Instruction::Nop) {
-            if !last_was_nop && cli.nop_break {
+            if !last_was_nop
+                && cli.nop_break
+                && emulator.ghost_read_mem(emulator.ip()) != Instruction::Nop.into_u4()
+            {
                 cli.step = true;
             }
             last_was_nop = true;
