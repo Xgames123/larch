@@ -5,11 +5,11 @@ My attempts at making 'cpu architectures'
 These are designed to run in Minecraft (have never been built)
 
 ### Docs
-* [v2](docs/v2.md)
-* [v1](docs/v1.md) (has some design problems)
+* [mccv2](docs/v2.md)
+* [mccv1](docs/v1.md) (has some design problems)
 
 ### Assembling
-A assembler for v2 can be found [here](tools/mccasm)
+A assembler for mccv2 can be found [here](tools/mccasm)
 * For Linux run the install.sh script to install
 
 #### Programs
