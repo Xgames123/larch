@@ -5,7 +5,7 @@ My attempts at making 'cpu architectures'
 These are designed to run in Minecraft (have never been built)
 
 ### Docs
-* [mccv3](docs/v3.md)
+* [mccv3](docs/v3/core.md)
 * [mccv2](docs/v2.md)
 * [mccv1](docs/v1.md) (has some design problems)
 
