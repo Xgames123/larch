@@ -23,30 +23,31 @@ All operations are 1 byte where the first 4 bits are the opcode followed by 2 ar
 
 ### instructions
 Registers are noted using: {param_name}.
-| name       | opcode | arg0      | arg1       | description                                                                        |
-|------------|--------|-----------|------------|------------------------------------------------------------------------------------|
-| nop        | 0x0    | 00        | 00         | Does nothing.                                                                      |
-| brk        | 0x0    | 00        | 01         | Break the debugger.                                                                |
-| flf        | 0x0    | 00        | 10         | Flips flag (if flag was set reset else set)                                        |
-| clf        | 0x0    | 00        | 11         | Clear flag                                                                         |
-| shl        | 0x0    | 01        | {reg}      | Shift reg left by 1.                                                               |
-| shr        | 0x0    | 10        | {reg}      | Shift reg right by 1.                                                              |
-| unassigned | 0x0    | 11        | {reg}      |                                                                                    |
-| lim        | 0x1    | value_low | value_high | Loads the imidiate value into r0.                                                  |
-| mew        | 0x2    | addr_low  | addr_high  | Writes r0 to memory at addr (uses r3 as bank select)                               |
-| mer        | 0x3    | addr_low  | addr_high  | Reads the value at memory address addr into r0 (uses r3 as bank select)            |
-| mov        | 0x4    | {source}  | {dest}     | Moves the value from {source} into {dest}.                                         |
-| jms        | 0x5    | addr_low  | addr_high  | Static jump to addr when the overflow flag is set.                                 |
-| jmp        | 0x6    | {addr}    | {bank}     | Jumps to {addr} on bank {bank} when the overflow flag is set                       |
-| xor        | 0x7    | {source}  | {a}        | Adds {a} to the {source} and stores it to {source}.                                |
-| add        | 0x8    | {source}  | {a}        | Adds {a} to the {source} and stores it to {source}. (Sets the overflow flag)       |
-| mul        | 0x9    | {source}  | {a}        | xor's {a} and {source} and stores the result in {source}. (Sets the overflow flag) |
-| cmp        | 0xA    | {a}       | {b}        | Sets the overflow flag when {a} == {b}                                             |
-| gt         | 0xB    | {a}       | {b}        | Sets the overflow flag when {a} > {b}                                              |
-| unassigned | 0xC    | {reg}     | {reg}      |                                                                                    |
-| unassigned | 0xD    | {reg}     | {reg}      |                                                                                    |
-| unassigned | 0xE    | {reg}     | {reg}      |                                                                                    |
-| unassigned | 0xF    | {reg}     | {reg}      |                                                                                    |
+| name       | opcode | arg0      | arg1       | description                                                                  |
+|------------|--------|-----------|------------|------------------------------------------------------------------------------|
+| nop        | 0x0    | 00        | 00         | Does nothing.                                                                |
+| brk        | 0x0    | 00        | 01         | Break the debugger.                                                          |
+| flf        | 0x0    | 00        | 10         | Flips flag (if flag was set reset else set)                                  |
+| clf        | 0x0    | 00        | 11         | Clear flag                                                                   |
+| shl        | 0x0    | 01        | {reg}      | Shift reg left by 1.                                                         |
+| shr        | 0x0    | 10        | {reg}      | Shift reg right by 1.                                                        |
+| unassigned | 0x0    | 11        | {reg}      |                                                                              |
+| lim        | 0x1    | value_low | value_high | Loads the imidiate value into r0.                                            |
+| mew        | 0x2    | addr_low  | addr_high  | Writes r0 to memory at addr (uses r3 as bank select)                         |
+| mer        | 0x3    | addr_low  | addr_high  | Reads the value at memory address addr into r0 (uses r3 as bank select)      |
+| mov        | 0x4    | {source}  | {dest}     | Moves the value from {source} into {dest}.                                   |
+| jms        | 0x5    | addr_low  | addr_high  | Static jump to addr when the overflow flag is set.                           |
+| jmp        | 0x6    | {addr}    | {bank}     | Jumps to {addr} on bank {bank} when the overflow flag is set                 |
+| eq         | 0xA    | {a}       | {b}        | Sets the overflow flag when {a} == {b}                                       |
+| gt         | 0xB    | {a}       | {b}        | Sets the overflow flag when {a} > {b}                                        |
+| add        | 0x8    | {a}       | {b}        | Adds {a} to the {b} and stores it to {a}. (Sets the overflow flag)           |
+| mul        | 0x9    | {a}       | {b}        | Multiplies {a} with {b} and store the result in {a} (Sets the overflow flag) |
+| and        | 0xA    | {a}       | {b}        | and's {a} and {b} and stores the result in {a}                               |
+| nand       | 0xB    | {a}       | {b}        | nand's {a} and {b} and stores the result in {a}                              |
+| or         | 0xC    | {a}       | {b}        | or's {a} and {b} and stores the result in {a}.                               |
+| xor        | 0xD    | {a}       | {b}        | xor's {a} and {b} and stores the result in {a}.                              |
+| unassigned | 0xE    | {reg}     | {reg}      |                                                                              |
+| unassigned | 0xF    | {reg}     | {reg}      |                                                                              |
 
 
 ## assembly language
