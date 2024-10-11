@@ -38,15 +38,14 @@ Registers are noted using: {param_name}.
 | mov        | 0x4    | {source}  | {dest}     | Moves the value from {source} into {dest}.                                   |
 | jms        | 0x5    | addr_low  | addr_high  | Static jump to addr when the overflow flag is set.                           |
 | jmp        | 0x6    | {addr}    | {bank}     | Jumps to {addr} on bank {bank} when the overflow flag is set                 |
-| eq         | 0xA    | {a}       | {b}        | Sets the overflow flag when {a} == {b}                                       |
-| gt         | 0xB    | {a}       | {b}        | Sets the overflow flag when {a} > {b}                                        |
-| add        | 0x8    | {a}       | {b}        | Adds {a} to the {b} and stores it to {a}. (Sets the overflow flag)           |
-| mul        | 0x9    | {a}       | {b}        | Multiplies {a} with {b} and store the result in {a} (Sets the overflow flag) |
-| and        | 0xA    | {a}       | {b}        | and's {a} and {b} and stores the result in {a}                               |
-| nand       | 0xB    | {a}       | {b}        | nand's {a} and {b} and stores the result in {a}                              |
-| or         | 0xC    | {a}       | {b}        | or's {a} and {b} and stores the result in {a}.                               |
-| xor        | 0xD    | {a}       | {b}        | xor's {a} and {b} and stores the result in {a}.                              |
-| unassigned | 0xE    | {reg}     | {reg}      |                                                                              |
+| eq         | 0x7    | {a}       | {b}        | Sets the overflow flag when {a} == {b}                                       |
+| gt         | 0x8    | {a}       | {b}        | Sets the overflow flag when {a} > {b}                                        |
+| add        | 0x9    | {a}       | {b}        | Adds {a} to the {b} and stores it to {a}. (Sets the overflow flag)           |
+| mul        | 0xA    | {a}       | {b}        | Multiplies {a} with {b} and store the result in {a} (Sets the overflow flag) |
+| and        | 0xB    | {a}       | {b}        | and's {a} and {b} and stores the result in {a}                               |
+| nand       | 0xC    | {a}       | {b}        | nand's {a} and {b} and stores the result in {a}                              |
+| or         | 0xD    | {a}       | {b}        | or's {a} and {b} and stores the result in {a}.                               |
+| xor        | 0xE    | {a}       | {b}        | xor's {a} and {b} and stores the result in {a}.                              |
 | unassigned | 0xF    | {reg}     | {reg}      |                                                                              |
 
 

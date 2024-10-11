@@ -1,17 +1,17 @@
-use libmcc::u4;
+use libnna::u4;
 use std::fmt::Display;
-//pub mod v2;
-pub mod v3;
+
+mod parse;
 
 pub enum Stage {
-    Lex,
-    CodeGen,
+    Parse,
+    Asm,
 }
 impl Display for Stage {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Stage::Lex => fmt.write_str("LEX"),
-            Stage::CodeGen => fmt.write_str("CGEN"),
+            Stage::Parse => fmt.write_str("PARSE"),
+            Stage::Asm => fmt.write_str("ASM"),
         }
     }
 }
@@ -38,7 +38,7 @@ impl Display for AsmError {
 }
 
 pub fn assemble(input: String) -> Result<[u4; 256], AsmError> {
-    let lexed = v3::lexing::lex(input)?;
+    let parsed = parse::parse(input)?;
     let code = v3::codegen::gencode(lexed)?;
     Ok(code)
 }

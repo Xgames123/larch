@@ -7,7 +7,7 @@ use std::{
 };
 use stderrlog::LogLevelNum;
 
-use crate::{emiting::*, util::count_nonzero_pages};
+use crate::{emiting::*, util::count_nonzero_banks};
 mod asm;
 mod emiting;
 mod util;
@@ -101,6 +101,6 @@ fn main() {
     });
 
     if cli.memory_usage {
-        println!("Using {}/16 pages", count_nonzero_pages(&out));
+        println!("Using {}/16 banks", count_nonzero_banks(&out));
     }
 }

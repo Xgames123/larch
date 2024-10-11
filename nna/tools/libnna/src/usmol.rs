@@ -1,3 +1,6 @@
+use core::fmt;
+use std::fmt::LowerHex;
+
 #[macro_export]
 macro_rules! u2 {
     ($val:literal) => {
@@ -19,9 +22,6 @@ impl u2 {
         Self(val & 0b00000011)
     }
 }
-
-use core::fmt;
-use std::fmt::LowerHex;
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]

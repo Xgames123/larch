@@ -1,4 +1,4 @@
-use libmcc::u4;
+use libnna::u4;
 use std::str::FromStr;
 
 pub fn to_hex4(val: u4) -> String {
@@ -27,19 +27,19 @@ pub fn parse_hex4<'a>(str: &'a str) -> Option<u4> {
     return None;
 }
 
-pub fn count_nonzero_pages(data: &[u4; 256]) -> usize {
-    let mut non_zero_pages = 0;
-    for page in data.chunks(16) {
+pub fn count_nonzero_banks(data: &[u4; 256]) -> usize {
+    let mut count = 0;
+    for bank in data.chunks(16) {
         let mut zero = true;
-        for nib in page {
+        for nib in bank {
             if *nib != u4::ZERO {
                 zero = false;
                 break;
             }
         }
         if zero {
-            non_zero_pages += 1;
+            count += 1;
         }
     }
-    non_zero_pages
+    count
 }

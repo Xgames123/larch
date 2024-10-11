@@ -7,6 +7,16 @@ pub enum Reg {
     R2,
     R3,
 }
+impl Reg {
+    pub fn code(&self) -> u2 {
+        match self {
+            Self::R0 => u2!(0b00),
+            Self::R1 => u2!(0b01),
+            Self::R2 => u2!(0b10),
+            Self::R3 => u2!(0b11),
+        }
+    }
+}
 
 ///Argument type of an operation
 pub enum ArgTy {
@@ -34,9 +44,9 @@ macro_rules! ops {
             pub fn opcode(&self) -> u8{
                 self.0
             }
-            pub fn arg_types(&self) -> ArgTy{
+            pub fn arg_types(&self) -> (ArgTy, ArgTy){
                 match self.0{
-                    $($opcode => oparg!($arg0)),*,
+                    $($opcode => (oparg!($arg0), oparg!($arg1))),*,
                     _=>unreachable!(),
                 }
 
@@ -51,7 +61,7 @@ macro_rules! ops {
     };
 }
 ops! {
-    pub NnaOp{
+    pub Op{
         "nop":0x00,(none),(none),
         "brk":0x01,(none),(none),
         "flf":0x02,(none),(none),
@@ -65,10 +75,13 @@ ops! {
         "mov":0x40,("source":reg),   ("dest":reg),
         "jms":0x50,("addr_low":raw), ("addr_high":raw),
         "jmp":0x60,("addr":reg),     ("bank":reg),
-        "xor":0x70,("source":reg),   ("a":reg),
-        "add":0x80,("source":reg),   ("a":reg),
-        "mul":0x90,("source":reg),   ("a":reg),
-        "cmp":0xA0,("a":reg),        ("b":reg),
-        "gt" :0xB0,("a":reg),        ("b":reg)
+        "eq" :0x70,("a":reg),        ("b":reg),
+        "gt" :0x80,("a":reg),        ("b":reg),
+        "add":0x90,("source":reg),   ("a":reg),
+        "mul":0xA0,("source":reg),   ("a":reg),
+        "and":0xB0,("source":reg),   ("a":reg),
+        "nand":0xC0,("source":reg),   ("a":reg),
+        "or" :0xD0,("source":reg),   ("a":reg),
+        "xor":0xE0,("source":reg),   ("a":reg)
     }
 }
