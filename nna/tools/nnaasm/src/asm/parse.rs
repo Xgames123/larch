@@ -1,6 +1,6 @@
 use super::AsmError;
 use crate::asm::Stage;
-use crate::util::{parse_hex4, parse_hex8};
+use crate::util::{parse_hex4};
 use libnna::Op;
 use libnna::{u4, ArgTy};
 
@@ -17,7 +17,16 @@ pub struct TokenLineNumPair {
     pub token: Token,
 }
 
-pub fn parse(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
+pub fn parse_hex8<'a>(str: &'a str) -> Option<u8> {
+    let str = str.to_lowercase();
+    if str.len() != 2 {
+        return None;
+    }
+
+    u8::from_str_radix(&str, 16).ok()
+}
+
+pub fn parse(input: &str) -> Result<Vec<TokenLineNumPair>, AsmError> {
     let mut vec = Vec::new();
 
     macro_rules! push_tok {
@@ -29,9 +38,8 @@ pub fn parse(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
         };
     }
 
-    for (linenum, line) in input.split("\n").enumerate() {
+    for (linenum, line) in input.lines().enumerate() {
         let linenum = linenum + 1;
-        let mut line = line;
 
         // strip comments
         if let Some(pos) = line.find('#') {
@@ -41,9 +49,13 @@ pub fn parse(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
             line = &line[..pos];
         }
 
-        let mut org = false;
-        for token in line.split_whitespace() {
-            if org {
+        let mut iter = line.split_whitespace();
+        loop{
+            let Some(token) = iter.next() else {break;};
+            if token == ".org" {
+                let token = iter.next().ok_or(AsmError{
+                    linenum: linenum,
+                })?;
                 push_tok!(
                     Token::Org(parse_hex8(&token).ok_or_else(|| AsmError {
                         linenum: Some(linenum),
@@ -55,8 +67,11 @@ pub fn parse(input: String) -> Result<Vec<TokenLineNumPair>, AsmError> {
                 );
                 continue;
             }
-            if token == ".org" {
-                org = true;
+
+        }
+
+        for token in line.split_whitespace() {
+            if org {
                 continue;
             }
 

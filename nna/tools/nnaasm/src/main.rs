@@ -1,3 +1,4 @@
+use asm::AsmError;
 use clap::{Parser, ValueEnum};
 use std::{
     fs,
@@ -7,9 +8,9 @@ use std::{
 };
 use stderrlog::LogLevelNum;
 
-use crate::{emiting::*, util::count_nonzero_banks};
+//use crate::{emiting::*, util::count_nonzero_banks};
 mod asm;
-mod emiting;
+//mod emiting;
 mod util;
 
 #[derive(Parser)]
@@ -45,23 +46,32 @@ enum Format {
     Hex,
     Bin,
 }
-fn get_input_data(path: &str) -> io::Result<String> {
+fn get_input_data(path: &str) -> io::Result<(Box<str>, String)> {
     if path == "-" {
         let mut str = String::new();
         let mut stdin = io::stdin();
         stdin.read_to_string(&mut str)?;
-        Ok(str)
+        Ok(("stdin".into(), str))
     } else {
         let can_path = std::fs::canonicalize(&path)?;
+        let filename = can_path
+            .file_name()
+            .map(|f| f.to_str())
+            .flatten()
+            .unwrap_or("unknown_file")
+            .into();
         let str = fs::read_to_string(can_path)?;
-        Ok(str)
+        Ok((filename, str))
     }
 }
 
-fn die(message: &str) {
-    eprintln!("FATAL: {}", message);
-    process::exit(-1);
+macro_rules! die {
+    ($($arg:tt)*) => {
+        eprintln!($($arg)*);
+        process::exit(-1);
+    };
 }
+
 fn main() {
     let cli = Cli::parse();
     stderrlog::new()
@@ -73,34 +83,37 @@ fn main() {
 
     let output_file = Path::new(&cli.output);
 
-    let input_data = get_input_data(&cli.input).unwrap_or_else(|err: io::Error| {
-        die(&format!(
-            "Failed to read input '{}'\n{}",
-            cli.input,
-            &err.to_string()
-        ));
-        String::new()
+    let (filename, input_data) = get_input_data(&cli.input).unwrap_or_else(|err: io::Error| {
+        die!("Failed to read input '{}'\n{}", cli.input, &err.to_string());
     });
 
-    let out = match asm::assemble(input_data) {
-        Ok(out) => out,
-        Err(err) => {
-            die(&err.to_string());
-            return;
-        }
+    let err = AsmError {
+        filename,
+        file: &input_data,
+        linenum: 10,
+        span: 2..4,
+        message: "test error".into(),
     };
-
-    let content = emit(
-        cli.format,
-        output_file.extension().map(|ext| ext.to_str()).flatten(),
-        out,
-    );
-
-    fs::write(cli.output, content).unwrap_or_else(|err| {
-        die(&format!("Failed to write output file\n\n {}", err));
-    });
-
-    if cli.memory_usage {
-        println!("Using {}/16 banks", count_nonzero_banks(&out));
-    }
+    println!("{}", err);
+    // let out = match asm::assemble(input_data) {
+    //     Ok(out) => out,
+    //     Err(err) => {
+    //         die(&err.to_string());
+    //         return;
+    //     }
+    // };
+    //
+    // let content = emit(
+    //     cli.format,
+    //     output_file.extension().map(|ext| ext.to_str()).flatten(),
+    //     out,
+    // );
+    //
+    // fs::write(cli.output, content).unwrap_or_else(|err| {
+    //     die(&format!("Failed to write output file\n\n {}", err));
+    // });
+    //
+    // if cli.memory_usage {
+    //     println!("Using {}/16 banks", count_nonzero_banks(&out));
+    // }
 }
