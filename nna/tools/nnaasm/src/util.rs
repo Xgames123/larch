@@ -7,15 +7,6 @@ pub fn to_hex4(val: u4) -> String {
     str
 }
 
-pub fn parse_hex8<'a>(str: &'a str) -> Option<u8> {
-    let str = str.to_lowercase();
-    if str.len() != 2 {
-        return None;
-    }
-
-    u8::from_str_radix(&str, 16).ok()
-}
-
 pub fn parse_hex4<'a>(str: &'a str) -> Option<u4> {
     let str = str.to_lowercase();
     if str.len() != 1 {
