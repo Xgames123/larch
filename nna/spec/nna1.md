@@ -1,28 +1,41 @@
 # nna1 (No Name Architecture)
 
-## Memory
+# Memory
 Memory is divided into 16 banks that are each 16 nibbles big.
 
-Execution starts at 0x00.
-Most [other devices](devices.md) (chardev, ..) are memory mapped at bank f.
+When the processor boots it starts executing from address 0x00.
 
-## Flags
+# Ports
+The last bank (0xF0 -> 0xFF) is divided into 4 ports (p0 -> p3) each 16 bits in size.
+
+A device can plug into 1 or more ports [see devices](devices.md).
+
+## Hardware layout
+Each port contains 17 pins
+
+- pin0 is the clock signal of the processor
+
+- pin1-pin17 are the data lines of the port
+
+
+# Flags
 There is 1 flag (overflow flag) that is set on overflows and used by jump instructions to conditionally jump.
 
-## Registers
+# Registers
+All registers including pc are reset to 0 when the device boots up.
 
-| reg | description                               |
-|-----|-------------------------------------------|
-| r0  | Memory reads and writes use this register |
-| r1  | General purpose                           |
-| r2  | General purpose                           |
-| r3  | Used as bank for read and write ops       |
+| name | size | description                                                |
+|------|------|------------------------------------------------------------|
+| r0   | 4    | General purpose, Memory reads and writes use this register |
+| r1   | 4    | General purpose                                            |
+| r2   | 4    | General purpose                                            |
+| r3   | 4    | General purpose, Used as bank for read and write ops       |
+| pc   | 8    | Program counter                                            |
 
-## Operations/Instructions
-All operations are 1 byte where the first 4 bits are the opcode followed by 2 arguments each 2 bits.
+# Instructions
+Instructions are 1 byte where the first 4 bits are the opcode followed by 2 arguments each 2 bits.
+Registers are noted using: {param_description} in this diagram.
 
-### instructions
-Registers are noted using: {param_name}.
 | name       | opcode | arg0      | arg1       | description                                                                  |
 |------------|--------|-----------|------------|------------------------------------------------------------------------------|
 | nop        | 0x0    | 00        | 00         | Does nothing.                                                                |
@@ -49,7 +62,7 @@ Registers are noted using: {param_name}.
 | unassigned | 0xF    | {reg}     | {reg}      |                                                                              |
 
 
-## assembly language
+# Assembly language
 
 ```asm
 .org F0  ; all code and data below will be put at location F0
