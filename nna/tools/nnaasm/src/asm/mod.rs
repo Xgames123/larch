@@ -1,88 +1,83 @@
-use libnna::u4;
-use std::{
-    fmt::{Display, Write},
-    ops::Range,
-};
+use std::{ops::Range, rc::Rc};
 
-//mod parse;
+mod parselex;
+
+const COLOR_RED: &'static str = "\x1b[31m";
+const BOLD: &'static str = "\x1b[1m";
+const RESET: &'static str = "\x1b[0m";
 
 pub struct AsmError<'a> {
-    pub filename: Box<str>,
+    pub filename: Rc<str>,
     pub file: &'a str,
-    pub linenum: usize,
-    pub span: Range<usize>,
-    pub message: Box<str>,
+    pub location: (usize, Range<usize>),
+    pub message: String,
 }
 impl<'a> AsmError<'a> {
     const VIEW_SIZE: usize = 2;
-}
 
-fn write_gutter(
-    fmt: &mut std::fmt::Formatter<'_>,
-    line_num: Option<usize>,
-    max_len: usize,
-) -> std::fmt::Result {
-    match line_num {
-        Some(lnum) => {
-            let lnum = lnum.saturating_add(1);
-            for _ in calc_len(lnum)..max_len {
-                fmt.write_str(" ")?;
+    fn write_gutter(out: &mut String, line_num: Option<usize>, max_len: usize) {
+        match line_num {
+            Some(lnum) => {
+                let lnum = lnum.saturating_add(1);
+                for _ in Self::calc_len(lnum)..max_len {
+                    out.push(' ');
+                }
+                out.push_str(&lnum.to_string());
             }
-            lnum.fmt(fmt)?;
-        }
-        None => {
-            for _ in 0..max_len {
-                fmt.write_str(" ")?;
+            None => {
+                for _ in 0..max_len {
+                    out.push(' ');
+                }
             }
-        }
-    };
+        };
 
-    fmt.write_str(" | ")?;
-    Ok(())
-}
-fn calc_len(num: usize) -> usize {
-    let mut digits = 0;
-    let mut i = 1;
-    while i <= num {
-        digits += 1;
-        i *= 10;
+        out.push_str(" | ");
     }
-    digits
+    fn calc_len(num: usize) -> usize {
+        let mut digits = 0;
+        let mut i = 1;
+        while i <= num {
+            digits += 1;
+            i *= 10;
+        }
+        digits
+    }
 }
-impl<'a> Display for AsmError<'a> {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let max_len = calc_len(self.linenum.saturating_add(Self::VIEW_SIZE + 1));
 
-        fmt.write_str("error: ")?;
-        fmt.write_str(&self.filename)?;
-        fmt.write_str(":")?;
-        self.linenum.fmt(fmt)?;
-        fmt.write_str(":")?;
-        self.span.start.fmt(fmt)?;
-        fmt.write_str("\n")?;
+impl AsmError<'_> {
+    pub fn print(&self) {
+        let (linenum, span) = &self.location;
+        let max_len = Self::calc_len(linenum.saturating_add(Self::VIEW_SIZE + 1));
+
+        let mut out = String::new();
         for (i, line) in self.file.lines().enumerate() {
-            if i < self.linenum.saturating_sub(Self::VIEW_SIZE)
-                || i > self.linenum.saturating_add(Self::VIEW_SIZE)
+            if i < linenum.saturating_sub(Self::VIEW_SIZE)
+                || i > linenum.saturating_add(Self::VIEW_SIZE)
             {
                 continue;
             }
-            write_gutter(fmt, Some(i), max_len)?;
-            fmt.write_str(line)?;
-            fmt.write_str("\n")?;
-            if i == self.linenum {
-                write_gutter(fmt, None, max_len)?;
-                for _ in 0..self.span.start {
-                    fmt.write_char(' ')?;
+            Self::write_gutter(&mut out, Some(i), max_len);
+            out.push_str(line);
+            out.push('\n');
+            if i == *linenum {
+                Self::write_gutter(&mut out, None, max_len);
+                for _ in 0..span.start {
+                    out.push(' ');
                 }
-                for _ in self.span.start..self.span.end {
-                    fmt.write_char('^')?;
+                out.push_str(COLOR_RED);
+                for _ in span.start..span.end {
+                    out.push('^');
                 }
-                fmt.write_str(" ")?;
-                fmt.write_str(&self.message)?;
-                fmt.write_str("\n")?;
+                out.push_str(RESET);
+                out.push(' ');
+                out.push_str(&self.message);
+                out.push('\n');
             }
         }
-        Ok(())
+        eprintln!(
+            "{COLOR_RED}{BOLD}error:{RESET} {}:{}{}\n",
+            self.filename, linenum, span.start
+        )
     }
 }
 

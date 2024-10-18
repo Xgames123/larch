@@ -22,7 +22,7 @@ struct Cli {
     input: String,
 
     /// Output file
-    #[arg(short = 'o', long)]
+    #[arg(short = 'o', long, default_value = "out.bin")]
     output: String,
 
     /// The format of the output
@@ -84,17 +84,16 @@ fn main() {
     let output_file = Path::new(&cli.output);
 
     let (filename, input_data) = get_input_data(&cli.input).unwrap_or_else(|err: io::Error| {
-        die!("Failed to read input '{}'\n{}", cli.input, &err.to_string());
+        die!("Failed to read '{}'\n{}", cli.input, err);
     });
 
     let err = AsmError {
-        filename,
+        filename: filename.into(),
         file: &input_data,
-        linenum: 10,
-        span: 2..4,
+        location: (10, 2..4),
         message: "test error".into(),
     };
-    println!("{}", err);
+    err.print();
     // let out = match asm::assemble(input_data) {
     //     Ok(out) => out,
     //     Err(err) => {
