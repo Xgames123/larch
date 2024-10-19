@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ops::Range;
 use std::rc::Rc;
@@ -10,76 +11,78 @@ use libnna::{u4, ArgTy};
 
 struct CodeParser<'a>{
     cur_linenum: usize,
-    line: &'a str,
-    line_iter: std::str::Lines<'a>,
+    code: &'a str,
+    cur_index: usize,
     char_iter: std::str::CharIndices<'a>,
-    span: Range<usize>,
-    linenum: usize,
+    last_location: (usize, Range<usize>),
 }
 impl<'a> CodeParser<'a>{
     pub fn new(code: &'a str) -> Option<Self>{
-        let mut line_iter = code.lines();
-        let line = line_iter.next()?;
-        let char_iter = line.char_indices();
         Some(Self{
+            last_location: (0, 0..0),
+            code,
             cur_linenum: 0,
-            linenum: 0,
-            line_iter,
-            line,
-            char_iter,
-            span: 0..0,
+            cur_index: 0,
+            char_iter: code.char_indices(),
         })
 
     }
-    pub fn next_line(&mut self) -> Option<()>{
-        self.cur_linenum+=1;
-        self.line = self.line_iter.next()?;
-        self.char_iter = self.line.char_indices();
-        Some(())
-    }
-    pub fn next_char(&mut self) -> Option<(usize, char)> {
+    pub fn skip_line(&mut self){
         loop{
-            match self.char_iter.next(){
-                Some(char)=>{
-                    if char.1 == ';'{
-                        self.next_line()?;
-                    }else{
-                        return Some(char)
+            match self.next_char() {
+                None=>{return;}
+                Some((_, char))=>{
+                    if char == '\n'{
+                        return;
                     }
-                },
-                None=>{
-                    self.next_line()?
                 }
             }
         }
     }
-    pub fn linenum(&self) -> usize{
-        self.linenum
+    pub fn next_char(&mut self) -> Option<(usize, char)> {
+        let (index, char) = self.char_iter.next()?;
+        self.cur_index+=1;
+        if char == '\n'{
+            self.cur_linenum+=1;
+            self.cur_index=0;
+        }
+        Some((index, char))
     }
-    pub fn span(&self) -> Range<usize>{
-        self.span.clone()
+    pub fn code(&self) -> &'a str{
+        self.code
     }
-    pub fn last_location(&self) -> (usize, Range<usize>){
-        (self.linenum(), self.span())
+    pub fn location(&self) -> (usize, Range<usize>){
+        self.last_location.clone()
+    }
+    pub fn next_or_err(&mut self, message: Cow<'static, str>) -> Result<&'a str, LexError>{
+        self.next().ok_or(LexError{message, location: self.last_location.clone()})
     }
 }
 impl<'a> Iterator for CodeParser<'a>{
     type Item = &'a str;
     fn next(&mut self) -> Option<Self::Item> {
+        let mut range_start = 0;
+        let mut start_i = None;
         loop{
             let (index, char) = self.next_char()?;
-            if !char.is_whitespace(){
-                self.span.start = index;
-                break;
+            match start_i {
+                None => {
+                    if !char.is_whitespace(){
+                        range_start = index;
+                        start_i = Some(self.cur_index);
+                    }
+
+                }
+                Some(start_i) => {
+                    if char.is_whitespace(){
+                        let loc = (self.cur_linenum, range_start..self.cur_index);
+                        self.last_location = loc.clone();
+                        return Some(&self.code[start_i..index])
+                    }
+
+                }
             }
-        }
-        loop{
-            let (index, char) = self.next_char()?;
-            if char.is_whitespace(){
-                self.span.end = index;
-                self.linenum = self.cur_linenum;
-                return Some(&self.line[self.span.clone()])
-            }
+
         }
 
     }
@@ -99,25 +102,19 @@ pub struct LocatedToken {
     pub token: Token,
 }
 
-struct LexContext<'a>{
-    data: &'a str,
-    parser: RefCell<CodeParser<'a>>,
-    filename: Rc<str>,
+struct LexError{
+    location: (usize, Range<usize>),
+    message: Cow<'static, str>,
 }
-impl<'a> LexContext<'a>{
-    pub fn err(&self, message: String) -> AsmError{
-        AsmError { filename: self.filename.clone(), file: self.data, location: self.parser.borrow().last_location(), message }
+impl LexError{
+    pub fn new(message: Cow<'static, str>, location: (usize, Range<usize>)) -> Self{
+        Self { location, message }
     }
-    pub fn next(&self) -> Option<&'a str>{
-        self.parser.borrow_mut().next()
-    }
-    pub fn last_location(&self) -> (usize, Range<usize>) {
-        self.parser.borrow().last_location()
-    }
-    pub fn expect_next(&self, message: String) -> Result<&'a str, AsmError>{
-        self.parser.borrow_mut().next().ok_or_else(||{
-            self.err(message)
-        })
+    pub fn from_static(message: &'static str, location: (usize, Range<usize>)) -> Self{
+        Self{
+            location,
+            message: Cow::Borrowed(message),
+        }
     }
 }
 
@@ -130,21 +127,30 @@ pub fn parse_hex8<'a>(str: &'a str) -> Option<u8> {
     u8::from_str_radix(&str, 16).ok()
 }
 
-fn parse_compiler_directive<'a>(token: &'a str,ctx: &'a LexContext) -> Result<Token, AsmError<'a>>{
+fn parse_compiler_directive<'a>(token: &'a str,parser: &mut CodeParser) -> Result<Token, LexError>{
     match token {
         "org" => {
-            let token = ctx.expect_next("Expected an 8 bit constant value after this. Ex. 1d".to_string())?;
-            let addr = parse_hex8(token).ok_or(ctx.err("Expected an 8 bit constant value. Ex. 1d".to_string()))?;
+            let token = parser.next_or_err(Cow::Borrowed("Expected an 8 bit constant value after this. Ex. 1d"))?;
+            let addr = parse_hex8(token).ok_or(LexError::from_static("Expected an 8 bit constant value. Ex. 1d", parser.location()))?;
             return Ok(Token::Org(addr));
         }
         _=>{
-            return Err(ctx.err("Unknown compiler directive".to_string()));
+            return Err(LexError::from_static("Unknown compiler directive", parser.location()));
         }
     }
 }
 
-fn parse_op<'a>(token: &'a str, ctx: &'a LexContext) -> Result<Token, AsmError<'a>>{
-    let op = Op::try_from_str(token).ok_or(ctx.err("Unknown operation".to_string()))?;
+fn parse_op<'a>(token: &'a str, parser: &mut CodeParser) -> Result<Token, LexError>{
+    let op = Op::try_from_str(token).ok_or(LexError::from_static("Unknown operation", parser.location()))?;
+    Ok(Token::Op(match op.arg_types() {
+        (ArgTy::None(), ArgTy::None()) => {
+            op.opcode()
+        },
+        (ArgTy::None(), ArgTy::Any(arg_name)) => {
+            let token = parser.next_or_err(Cow::Owned(format!("Expected a constant argument. for opeation: {}", op)));
+            op.opcode()
+        }
+    }))
 }
 
 pub fn parse_lex(input: &str, filename: Rc<str>) -> Result<Vec<LocatedToken>, AsmError> {
@@ -155,7 +161,7 @@ pub fn parse_lex(input: &str, filename: Rc<str>) -> Result<Vec<LocatedToken>, As
     let ctx = LexContext{
         filename,
         parser: parser.into(),
-        data: input,
+        code: input,
     };
 
     let push_token = |token: Token|{

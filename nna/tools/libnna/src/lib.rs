@@ -1,4 +1,6 @@
 mod usmol;
+use std::fmt::Display;
+
 pub use usmol::*;
 
 pub enum Reg {
@@ -23,6 +25,20 @@ pub enum ArgTy {
     None(),
     Any(&'static str),
     Reg(&'static str),
+}
+impl Display for ArgTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None() => {}
+            Self::Any(name) => f.write_str(*name)?,
+            Self::Reg(name) => {
+                f.write_str("[")?;
+                f.write_str(name)?;
+                f.write_str("]")?
+            }
+        }
+        Ok(())
+    }
 }
 
 macro_rules! oparg {
@@ -83,5 +99,11 @@ ops! {
         "nand":0xC0,("source":reg),   ("a":reg),
         "or" :0xD0,("source":reg),   ("a":reg),
         "xor":0xE0,("source":reg),   ("a":reg)
+    }
+}
+impl Display for Op {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        //f.write_str(j)
+        let (a1, a2) = self.arg_types();
     }
 }
