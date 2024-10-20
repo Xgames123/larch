@@ -21,6 +21,14 @@ impl u2 {
     pub const fn from_low(val: u8) -> Self {
         Self(val & 0b00000011)
     }
+    #[inline]
+    pub const fn into_low(self) -> u8 {
+        self.0
+    }
+    #[inline]
+    pub const fn into_high(self) -> u8 {
+        self.0 << 6
+    }
 }
 
 #[allow(non_camel_case_types)]

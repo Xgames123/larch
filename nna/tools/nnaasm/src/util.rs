@@ -7,17 +7,6 @@ pub fn to_hex4(val: u4) -> String {
     str
 }
 
-pub fn parse_hex4<'a>(str: &'a str) -> Option<u4> {
-    let str = str.to_lowercase();
-    if str.len() != 1 {
-        return None;
-    }
-    for char in str.chars() {
-        return char.to_digit(16).map(|val| u4::from_u32(val));
-    }
-    return None;
-}
-
 pub fn count_nonzero_banks(data: &[u4; 256]) -> usize {
     let mut count = 0;
     for bank in data.chunks(16) {

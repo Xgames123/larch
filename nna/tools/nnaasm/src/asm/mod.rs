@@ -1,10 +1,44 @@
 use std::{ops::Range, rc::Rc};
 
+mod codeparser;
 mod parselex;
 
 const COLOR_RED: &'static str = "\x1b[31m";
 const BOLD: &'static str = "\x1b[1m";
 const RESET: &'static str = "\x1b[0m";
+
+#[derive(Clone, Debug)]
+pub struct Location(usize, Range<usize>);
+impl From<(usize, Range<usize>)> for Location {
+    fn from(value: (usize, Range<usize>)) -> Self {
+        Self(value.0, value.1)
+    }
+}
+impl Location {
+    pub fn combine(self, other: Location) -> Self {
+        if other.0 != self.0 {
+            panic!("Can't combine locations on different lines");
+        }
+        if other.1.start < self.1.start {
+            Self(self.0, other.1.start..self.1.end)
+        } else {
+            Self(self.0, self.1.start..other.1.end)
+        }
+    }
+}
+#[derive(Debug)]
+pub struct Located<T> {
+    pub location: Location,
+    pub value: T,
+}
+impl<T> Located<T> {
+    pub fn new(value: T, location: Location) -> Located<T> {
+        Located { value, location }
+    }
+    pub fn map<T2, F: FnOnce(T) -> T2>(self, f: F) -> Located<T2> {
+        Located::new(f(self.value), self.location)
+    }
+}
 
 pub struct AsmError<'a> {
     pub filename: Rc<str>,
