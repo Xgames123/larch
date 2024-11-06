@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use super::Location;
+use super::{Located, Location};
 
 pub struct CodeParser<'a> {
     cur_linenum: usize,
@@ -51,20 +51,16 @@ impl<'a> CodeParser<'a> {
     pub fn next_or_err(
         &mut self,
         message: Cow<'static, str>,
-    ) -> Result<&'a str, super::parselex::LexError> {
-        self.next().ok_or(super::parselex::LexError {
-            message,
-            location: self.last_location.clone(),
-        })
+    ) -> Result<&'a str, Located<super::parselex::LexError>> {
+        self.next()
+            .ok_or(super::parselex::LexError.located(message, self.last_location.clone()))
     }
     pub fn next_same_line_or_err(
         &mut self,
         message: Cow<'static, str>,
-    ) -> Result<&'a str, super::parselex::LexError> {
-        self.next_same_line().ok_or(super::parselex::LexError {
-            message,
-            location: self.last_location.clone(),
-        })
+    ) -> Result<&'a str, Located<super::parselex::LexError>> {
+        self.next_same_line()
+            .ok_or(super::parselex::LexError.located(message, self.last_location.clone()))
     }
 
     pub fn next_same_line(&mut self) -> Option<&'a str> {
@@ -81,7 +77,7 @@ impl<'a> CodeParser<'a> {
         loop {
             let (index, char) = self.next_char()?;
             if char.is_whitespace() {
-                let loc = (self.cur_linenum, range_start..self.cur_index);
+                let loc: Location = (self.cur_linenum, range_start..self.cur_index).into();
                 self.last_location = loc.clone();
                 return Some(&self.code[start_index..index]);
             }

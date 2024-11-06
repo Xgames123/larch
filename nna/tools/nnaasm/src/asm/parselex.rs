@@ -8,7 +8,7 @@ use super::{AsmError, Located, Location};
 use libnna::OpCode;
 use libnna::{u2, u4, ArgOpTy};
 
-type Result<T> = std::result::Result<Located<T>, LexError>;
+type Result<T> = std::result::Result<Located<T>, Located<LexError>>;
 
 #[derive(Debug, Clone)]
 pub enum ValueToken4 {
@@ -30,18 +30,27 @@ pub enum Token {
 }
 
 pub struct LexError {
-    location: Location,
     message: Cow<'static, str>,
 }
 impl LexError {
-    pub fn new(message: Cow<'static, str>, location: Location) -> Self {
-        Self { location, message }
+    pub fn new(message: Cow<'static, str>) -> Self {
+        Self { message }
     }
-    pub fn from_static(message: &'static str, location: Location) -> Self {
+    pub fn new_static(message: &'static str) -> Self {
         Self {
-            location,
             message: Cow::Borrowed(message),
         }
+    }
+    pub fn located(message: Cow<'static, str>, location: Location) -> Located<Self> {
+        Located::new(Self { message }, location)
+    }
+    pub fn static_located(message: &'static str, location: Location) -> Located<Self> {
+        Located::new(
+            Self {
+                message: Cow::Borrowed(message),
+            },
+            location,
+        )
     }
 }
 
@@ -88,9 +97,9 @@ pub fn parse_hex2(str: &str) -> Option<u2> {
 pub fn parse_value4(
     token: &str,
     location: Location,
-) -> std::result::Result<Option<Located<ValueToken4>>, LexError> {
+) -> std::result::Result<Option<Located<ValueToken4>>, Located<LexError>> {
     if token.starts_with("0x") {
-        let value = parse_hex4(&token[2..]).ok_or(LexError::from_static(
+        let value = parse_hex4(&token[2..]).ok_or(LexError::static_located(
             "Invalid 4 bit hex literal",
             location.clone(),
         ))?;
@@ -98,7 +107,7 @@ pub fn parse_value4(
     }
 
     if token.starts_with("&") {
-        let value = parse_identifier(&token[1..]).ok_or(LexError::from_static(
+        let value = parse_identifier(&token[1..]).ok_or(LexError::static_located(
             "Label ref contains invalid characters.",
             location.clone(),
         ))?;
@@ -112,7 +121,7 @@ pub fn parse_next_hex8(parser: &mut CodeParser) -> Result<u8> {
     let token = parser.next_same_line_or_err(Cow::Borrowed(
         "Expected an 8 bit constant value after this.",
     ))?;
-    let value = parse_hex8(token).ok_or(LexError::from_static(
+    let value = parse_hex8(token).ok_or(LexError::static_located(
         "Expected an 8 bit constant value.",
         parser.location(),
     ))?;
@@ -125,7 +134,7 @@ pub fn parse_next_value4(parser: &mut CodeParser) -> Result<ValueToken4> {
         parser.next_same_line_or_err(Cow::Borrowed("Expected a 4 bit value after this."))?;
     match parse_value4(token, parser.location())? {
         Some(v) => Ok(v),
-        None => Err(LexError::from_static(
+        None => Err(LexError::static_located(
             "Expected a 4 bit value.",
             parser.location(),
         )),
@@ -134,7 +143,7 @@ pub fn parse_next_value4(parser: &mut CodeParser) -> Result<ValueToken4> {
 pub fn parse_next_value2(parser: &mut CodeParser) -> Result<u2> {
     let token =
         parser.next_same_line_or_err(Cow::Borrowed("Expected a 2 bit value after this."))?;
-    let value = parse_hex2(token).ok_or(LexError::from_static(
+    let value = parse_hex2(token).ok_or(LexError::static_located(
         "Expected an 2 bit value.",
         parser.location(),
     ))?;
@@ -147,7 +156,7 @@ pub fn parse_next_reg(parser: &mut CodeParser) -> Result<u2> {
         "r1" => Ok(Located::new(u2::ONE, parser.location())),
         "r2" => Ok(Located::new(u2::TOW, parser.location())),
         "r3" => Ok(Located::new(u2::THREE, parser.location())),
-        _ => Err(LexError::from_static(
+        _ => Err(LexError::static_located(
             "Invalid register name",
             parser.location(),
         )),
@@ -164,7 +173,7 @@ fn parse_compiler_directive<'a>(token: &'a str, parser: &mut CodeParser) -> Resu
             ));
         }
         _ => {
-            return Err(LexError::from_static(
+            return Err(LexError::static_located(
                 "Unknown compiler directive",
                 parser.location(),
             ));
@@ -173,7 +182,7 @@ fn parse_compiler_directive<'a>(token: &'a str, parser: &mut CodeParser) -> Resu
 }
 
 fn parse_op<'a>(token: &'a str, parser: &mut CodeParser) -> Result<OpToken> {
-    let op = OpCode::try_from_str(token).ok_or(LexError::from_static(
+    let op = OpCode::try_from_str(token).ok_or(LexError::static_located(
         "Unknown operation",
         parser.location(),
     ))?;
@@ -219,7 +228,7 @@ fn parse_op<'a>(token: &'a str, parser: &mut CodeParser) -> Result<OpToken> {
     })
 }
 
-pub fn parse_lex(input: &str) -> std::result::Result<Vec<Located<Token>>, LexError> {
+pub fn parse_lex(input: &str) -> std::result::Result<Vec<Located<Token>>, Located<LexError>> {
     let mut out_vec = Vec::new();
     let Some(mut parser) = CodeParser::new(input) else {
         return Ok(out_vec);
@@ -229,13 +238,20 @@ pub fn parse_lex(input: &str) -> std::result::Result<Vec<Located<Token>>, LexErr
         let Some(token) = parser.next() else {
             return Ok(out_vec);
         };
-
         if token.starts_with('.') {
             out_vec.push(parse_compiler_directive(&token[1..], &mut parser)?);
             continue;
         }
         if token.ends_with(':') {
-            parse_identifier(&token[..-1])
+            out_vec.push(
+                parse_identifier(&token[..token.len() - 1])
+                    .map(|label| Located::new(Token::LabelDef(label), parser.location()))
+                    .ok_or(LexError::static_located(
+                        "invalid label name",
+                        parser.location(),
+                    ))?,
+            );
+            continue;
         }
 
         if let Some(value) = parse_value4(token, parser.location())? {
