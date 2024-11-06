@@ -2,8 +2,7 @@
 My attempts at making 'cpu architectures'
 
 ## nna (No Name Architecture)
-4 bit general purpose architecture.
-- [nna1](nna/spec/nna1.md)
+[See nna repo](https://github.com/Xgames123/nna)
 
 ## mcc (MineCraft Computer)
 These are designed to run in Minecraft (have never been built)
